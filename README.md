@@ -1,1 +1,1 @@
-# waechter
+# ![Wächter](https://raw.githubusercontent.com/mtrossbach/waechter/main/logo.png)
