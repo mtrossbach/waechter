@@ -18,24 +18,24 @@ type contactsensorStatusPayload struct {
 }
 
 type genericContactSensor struct {
-	zdevice       model.ZigbeeDevice
+	deviceInfo    model.Z2MDeviceInfo
 	z2mManager    *zigbee.Z2MManager
 	systemControl system.SystemControl
 }
 
-func newGenericContactSensor(zdevice model.ZigbeeDevice, z2mManager *zigbee.Z2MManager) *genericContactSensor {
+func newGenericContactSensor(deviceInfo model.Z2MDeviceInfo, z2mManager *zigbee.Z2MManager) *genericContactSensor {
 	return &genericContactSensor{
-		zdevice:    zdevice,
+		deviceInfo: deviceInfo,
 		z2mManager: z2mManager,
 	}
 }
 
 func (s *genericContactSensor) GetId() string {
-	return s.zdevice.IeeeAddress
+	return s.deviceInfo.IeeeAddress
 }
 
 func (s *genericContactSensor) GetDisplayName() string {
-	return s.zdevice.FriendlyName
+	return s.deviceInfo.FriendlyName
 }
 
 func (s *genericContactSensor) GetSubsystem() string {
@@ -46,20 +46,24 @@ func (s *genericContactSensor) GetType() system.DeviceType {
 	return system.ContactSensor
 }
 
+func (s *genericContactSensor) OnDeviceAnnounced() {
+
+}
+
 func (s *genericContactSensor) OnSystemStateChanged(state system.State) {
-	misc.Log.Debugf("State changed to %v", state)
+
 }
 
 func (s *genericContactSensor) Setup(systemControl system.SystemControl) {
 	misc.Log.Debugf("Setup device %v:%v:%v", s.GetType(), s.GetId(), s.GetDisplayName())
 	s.systemControl = systemControl
-	s.z2mManager.Subscribe(s.zdevice.FriendlyName, s.handleMessage)
+	s.z2mManager.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
 }
 
 func (s *genericContactSensor) Teardown() {
 	misc.Log.Debugf("Teardown device %v:%v:%v", s.GetType(), s.GetId(), s.GetDisplayName())
 	s.systemControl = nil
-	s.z2mManager.Unsubscribe(s.zdevice.FriendlyName)
+	s.z2mManager.Unsubscribe(s.deviceInfo.FriendlyName)
 }
 
 func (s *genericContactSensor) handleMessage(msg mqtt.Message) {

@@ -31,21 +31,38 @@ func (z2ms *Zigbee2MqttSubsystem) Start(deviceManager system.DeviceManager) {
 	z2ms.deviceManager = deviceManager
 	z2ms.z2mManager.Connect()
 	z2ms.z2mManager.Subscribe("bridge/devices", z2ms.handleNewDeviceList)
+	z2ms.z2mManager.Subscribe("bridge/events", z2ms.handleDeviceEvent)
 }
 
 func (z2ms *Zigbee2MqttSubsystem) Stop() {
 	z2ms.z2mManager.Disconnect()
 }
 
+func (z2ms *Zigbee2MqttSubsystem) handleDeviceEvent(msg mqtt.Message) {
+	var deviceEvent model.DeviceEvent
+	if err := json.Unmarshal(msg.Payload(), &deviceEvent); err != nil {
+		misc.Log.Warnf("Could not parse device event: %v", string(msg.Payload()))
+		return
+	}
+
+	if deviceEvent.Type == "device_announce" && len(deviceEvent.Data.IeeeAddress) > 0 {
+		device := z2ms.deviceManager.GetDeviceById(deviceEvent.Data.IeeeAddress)
+		zdevice, ok := device.(devices.ZDevice)
+		if ok {
+			zdevice.OnDeviceAnnounced()
+		}
+	}
+}
+
 func (z2ms *Zigbee2MqttSubsystem) handleNewDeviceList(msg mqtt.Message) {
-	var newDevices []model.ZigbeeDevice
+	var newDevices []model.Z2MDeviceInfo
 	if err := json.Unmarshal(msg.Payload(), &newDevices); err != nil {
 		misc.Log.Warnf("Could not parse devices payload: %v", string(msg.Payload()))
 		return
 	}
 
 	var relevantDeviceIds []string
-	relevantDevices := make(map[string]model.ZigbeeDevice)
+	relevantDevices := make(map[string]model.Z2MDeviceInfo)
 	for _, device := range newDevices {
 		if device.Type == "EndDevice" && device.Supported {
 			relevantDeviceIds = append(relevantDeviceIds, device.IeeeAddress)

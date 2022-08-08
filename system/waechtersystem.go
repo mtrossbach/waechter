@@ -1,6 +1,9 @@
 package system
 
 import (
+	"time"
+
+	"github.com/mtrossbach/waechter/config"
 	"github.com/mtrossbach/waechter/misc"
 )
 
@@ -73,13 +76,13 @@ func (ws *WaechterSystem) ReportTriggered(device Device) {
 	misc.Log.Debugf("Trigger alert %v", DevDesc(device))
 }
 
-func (ws *WaechterSystem) RequestState(state State) {
-	ws.setState(state)
-}
-
 func (ws *WaechterSystem) setState(state State) {
 	misc.Log.Infof("State: %v", state)
 	ws.state = state
+	ws.notifyState()
+}
+
+func (ws *WaechterSystem) notifyState() {
 	for _, device := range ws.devices {
 		device.OnSystemStateChanged(ws.state)
 	}
@@ -87,4 +90,49 @@ func (ws *WaechterSystem) setState(state State) {
 
 func (ws *WaechterSystem) GetState() State {
 	return ws.state
+}
+
+func (ws *WaechterSystem) ArmStay() {
+	if ws.state == Disarmed {
+		ws.setState(ArmingStay)
+		ws.armingTimer()
+	} else {
+		ws.notifyState()
+	}
+}
+
+func (ws *WaechterSystem) ArmAway() {
+	if ws.state == Disarmed {
+		ws.setState(ArmingAway)
+		ws.armingTimer()
+	} else {
+		ws.notifyState()
+	}
+}
+
+func (ws *WaechterSystem) Disarm(enteredPin string) {
+	pins := config.GetConfig().DisarmPins
+
+	for _, pin := range pins {
+		if pin.Pin == enteredPin {
+			ws.setState(Disarmed)
+			return
+		}
+	}
+
+	ws.notifyState()
+}
+
+func (ws *WaechterSystem) Panic() {
+	ws.setState(Panic)
+}
+
+func (ws *WaechterSystem) armingTimer() {
+	time.AfterFunc(config.GetConfig().General.ExitDelay, func() {
+		if ws.state == ArmingAway {
+			ws.setState(ArmedAway)
+		} else if ws.state == ArmingStay {
+			ws.setState(ArmedStay)
+		}
+	})
 }

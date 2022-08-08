@@ -19,6 +19,7 @@ const (
 	ArmedAway State = "ArmedAway"
 
 	InAlarm State = "InAlarm"
+	Panic   State = "Panic"
 
 	EntryDelay State = "EntryDelay"
 )
@@ -60,8 +61,12 @@ type SystemControl interface {
 	ReportTampered(Device)
 	ReportTriggered(Device)
 
-	RequestState(State)
 	GetState() State
+
+	ArmStay()
+	ArmAway()
+	Disarm(pin string)
+	Panic()
 }
 
 type DeviceManager interface {

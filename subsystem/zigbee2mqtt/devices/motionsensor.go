@@ -18,24 +18,24 @@ type motionsensorStatusPayload struct {
 }
 
 type genericMotionSensor struct {
-	zdevice       model.ZigbeeDevice
+	deviceInfo    model.Z2MDeviceInfo
 	z2mManager    *zigbee.Z2MManager
 	systemControl system.SystemControl
 }
 
-func newGenericMotionSensor(zdevice model.ZigbeeDevice, z2mManager *zigbee.Z2MManager) *genericMotionSensor {
+func newGenericMotionSensor(deviceInfo model.Z2MDeviceInfo, z2mManager *zigbee.Z2MManager) *genericMotionSensor {
 	return &genericMotionSensor{
-		zdevice:    zdevice,
+		deviceInfo: deviceInfo,
 		z2mManager: z2mManager,
 	}
 }
 
 func (s *genericMotionSensor) GetId() string {
-	return s.zdevice.IeeeAddress
+	return s.deviceInfo.IeeeAddress
 }
 
 func (s *genericMotionSensor) GetDisplayName() string {
-	return s.zdevice.FriendlyName
+	return s.deviceInfo.FriendlyName
 }
 
 func (s *genericMotionSensor) GetSubsystem() string {
@@ -47,19 +47,23 @@ func (s *genericMotionSensor) GetType() system.DeviceType {
 }
 
 func (s *genericMotionSensor) OnSystemStateChanged(state system.State) {
-	misc.Log.Debugf("State changed to %v", state)
+
+}
+
+func (s *genericMotionSensor) OnDeviceAnnounced() {
+
 }
 
 func (s *genericMotionSensor) Setup(systemControl system.SystemControl) {
 	misc.Log.Debugf("Setup device %v:%v:%v", s.GetType(), s.GetId(), s.GetDisplayName())
 	s.systemControl = systemControl
-	s.z2mManager.Subscribe(s.zdevice.FriendlyName, s.handleMessage)
+	s.z2mManager.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
 }
 
 func (s *genericMotionSensor) Teardown() {
 	misc.Log.Debugf("Teardown device %v:%v:%v", s.GetType(), s.GetId(), s.GetDisplayName())
 	s.systemControl = nil
-	s.z2mManager.Unsubscribe(s.zdevice.FriendlyName)
+	s.z2mManager.Unsubscribe(s.deviceInfo.FriendlyName)
 }
 
 func (s *genericMotionSensor) handleMessage(msg mqtt.Message) {

@@ -1,6 +1,6 @@
 package model
 
-type ZigbeeDevice struct {
+type Z2MDeviceInfo struct {
 	IeeeAddress        string     `json:"ieee_address"`
 	Type               string     `json:"type"`
 	Supported          bool       `json:"supported"`
@@ -34,4 +34,13 @@ type Options struct {
 	Name     string `json:"name"`
 	Property string `json:"property"`
 	Type     string `json:"type"`
+}
+
+type DeviceEvent struct {
+	Data Data   `json:"data"`
+	Type string `json:"type"`
+}
+type Data struct {
+	FriendlyName string `json:"friendly_name"`
+	IeeeAddress  string `json:"ieee_address"`
 }
