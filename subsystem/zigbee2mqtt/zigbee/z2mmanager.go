@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mtrossbach/waechter/waechter/config"
-	"github.com/mtrossbach/waechter/waechter/misc"
+	"github.com/mtrossbach/waechter/config"
+	"github.com/mtrossbach/waechter/misc"
 )
 
 type Z2MManager struct {

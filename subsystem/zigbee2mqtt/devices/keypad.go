@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mtrossbach/waechter/waechter/misc"
-	"github.com/mtrossbach/waechter/waechter/subsystem/zigbee2mqtt/model"
-	"github.com/mtrossbach/waechter/waechter/subsystem/zigbee2mqtt/zigbee"
-	"github.com/mtrossbach/waechter/waechter/system"
+	"github.com/mtrossbach/waechter/misc"
+	"github.com/mtrossbach/waechter/subsystem/zigbee2mqtt/model"
+	"github.com/mtrossbach/waechter/subsystem/zigbee2mqtt/zigbee"
+	"github.com/mtrossbach/waechter/system"
 )
 
 type setStatePayload struct {

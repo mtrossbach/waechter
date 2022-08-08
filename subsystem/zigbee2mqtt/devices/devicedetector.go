@@ -1,10 +1,10 @@
 package devices
 
 import (
-	"github.com/mtrossbach/waechter/waechter/misc"
-	"github.com/mtrossbach/waechter/waechter/subsystem/zigbee2mqtt/model"
-	"github.com/mtrossbach/waechter/waechter/subsystem/zigbee2mqtt/zigbee"
-	"github.com/mtrossbach/waechter/waechter/system"
+	"github.com/mtrossbach/waechter/misc"
+	"github.com/mtrossbach/waechter/subsystem/zigbee2mqtt/model"
+	"github.com/mtrossbach/waechter/subsystem/zigbee2mqtt/zigbee"
+	"github.com/mtrossbach/waechter/system"
 )
 
 func CreateDevice(zdevice model.ZigbeeDevice, z2mManager *zigbee.Z2MManager) system.Device {

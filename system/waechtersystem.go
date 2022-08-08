@@ -1,7 +1,7 @@
 package system
 
 import (
-	"github.com/mtrossbach/waechter/waechter/misc"
+	"github.com/mtrossbach/waechter/misc"
 )
 
 type WaechterSystem struct {
