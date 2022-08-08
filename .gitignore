@@ -13,3 +13,7 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+.DS_Store
+__debug_bin
+.vscode/launch.json
+.env
