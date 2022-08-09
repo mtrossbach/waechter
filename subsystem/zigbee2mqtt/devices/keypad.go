@@ -9,6 +9,7 @@ import (
 	"github.com/mtrossbach/waechter/subsystem/zigbee2mqtt/model"
 	"github.com/mtrossbach/waechter/subsystem/zigbee2mqtt/zigbee"
 	"github.com/mtrossbach/waechter/system"
+	"github.com/rs/zerolog"
 )
 
 type setStatePayload struct {
@@ -35,6 +36,7 @@ type genericKeypad struct {
 	z2mManager    *zigbee.Z2MManager
 	systemControl system.SystemControl
 	targetTopic   string
+	log           zerolog.Logger
 }
 
 func newGenericKeypad(deviceInfo model.Z2MDeviceInfo, z2mManager *zigbee.Z2MManager) *genericKeypad {
@@ -42,6 +44,7 @@ func newGenericKeypad(deviceInfo model.Z2MDeviceInfo, z2mManager *zigbee.Z2MMana
 		deviceInfo:  deviceInfo,
 		z2mManager:  z2mManager,
 		targetTopic: fmt.Sprintf("%v/set", deviceInfo.FriendlyName),
+		log:         misc.Logger("Z2MKeypad"),
 	}
 }
 
@@ -62,7 +65,6 @@ func (s *genericKeypad) GetType() system.DeviceType {
 }
 
 func (s *genericKeypad) OnSystemStateChanged(state system.State) {
-	misc.Log.Debugf("State changed to %v", state)
 	s.sendState()
 }
 
@@ -71,14 +73,14 @@ func (s *genericKeypad) OnDeviceAnnounced() {
 }
 
 func (s *genericKeypad) Setup(systemControl system.SystemControl) {
-	misc.Log.Debugf("Setup device %v:%v:%v", s.GetType(), s.GetId(), s.GetDisplayName())
+	s.log.Debug().Str("type", string(s.GetType())).Str("id", s.GetId()).Str("displayName", s.GetDisplayName()).Msg("Setup device")
 	s.systemControl = systemControl
 	s.z2mManager.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
 	s.sendState()
 }
 
 func (s *genericKeypad) Teardown() {
-	misc.Log.Debugf("Teardown device %v:%v:%v", s.GetType(), s.GetId(), s.GetDisplayName())
+	s.log.Debug().Str("type", string(s.GetType())).Str("id", s.GetId()).Str("displayName", s.GetDisplayName()).Msg("Tear down device")
 	s.systemControl = nil
 	s.z2mManager.Unsubscribe(s.deviceInfo.FriendlyName)
 }
@@ -86,11 +88,11 @@ func (s *genericKeypad) Teardown() {
 func (s *genericKeypad) handleMessage(msg mqtt.Message) {
 	var payload keypadStatusPayload
 	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
-		misc.Log.Warnf("Could not parse payload: %v", string(msg.Payload()))
+		s.log.Warn().Str("payload", string(msg.Payload())).Msg("Could not parse payload")
 		return
 	}
 
-	misc.Log.Debugf("Got data: %v", string(msg.Payload()))
+	s.log.Debug().RawJSON("payload", msg.Payload()).Msg("Got data")
 
 	if len(payload.Action) > 0 {
 		s._sendState(payload.Action, &payload.ActionTransaction)

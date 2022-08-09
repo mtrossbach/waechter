@@ -10,16 +10,19 @@ import (
 	"github.com/mtrossbach/waechter/subsystem/zigbee2mqtt/model"
 	"github.com/mtrossbach/waechter/subsystem/zigbee2mqtt/zigbee"
 	"github.com/mtrossbach/waechter/system"
+	"github.com/rs/zerolog"
 )
 
 type Zigbee2MqttSubsystem struct {
 	deviceManager system.DeviceManager
 	z2mManager    *zigbee.Z2MManager
+	log           zerolog.Logger
 }
 
 func NewZigbee2MqttSubsystem() *Zigbee2MqttSubsystem {
 	return &Zigbee2MqttSubsystem{
 		z2mManager: zigbee.NewZ2MManager(config.GetConfig().Zigbee2Mqtt),
+		log:        misc.Logger("Zigbee2MqttSubsystem"),
 	}
 }
 
@@ -41,7 +44,7 @@ func (z2ms *Zigbee2MqttSubsystem) Stop() {
 func (z2ms *Zigbee2MqttSubsystem) handleDeviceEvent(msg mqtt.Message) {
 	var deviceEvent model.DeviceEvent
 	if err := json.Unmarshal(msg.Payload(), &deviceEvent); err != nil {
-		misc.Log.Warnf("Could not parse device event: %v", string(msg.Payload()))
+		z2ms.log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse device event!")
 		return
 	}
 
@@ -57,7 +60,7 @@ func (z2ms *Zigbee2MqttSubsystem) handleDeviceEvent(msg mqtt.Message) {
 func (z2ms *Zigbee2MqttSubsystem) handleNewDeviceList(msg mqtt.Message) {
 	var newDevices []model.Z2MDeviceInfo
 	if err := json.Unmarshal(msg.Payload(), &newDevices); err != nil {
-		misc.Log.Warnf("Could not parse devices payload: %v", string(msg.Payload()))
+		z2ms.log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse devices payload!")
 		return
 	}
 
@@ -75,10 +78,7 @@ func (z2ms *Zigbee2MqttSubsystem) handleNewDeviceList(msg mqtt.Message) {
 	deviceIdsToRemove := misc.StringsMissingInList(relevantDeviceIds, oldDeviceIds)
 	deviceIdsToAdd := misc.StringsMissingInList(oldDeviceIds, relevantDeviceIds)
 
-	misc.Log.Debugf("Received new list of device ids: %v", relevantDeviceIds)
-	misc.Log.Debugf("Already registered device ids: %v", oldDeviceIds)
-	misc.Log.Debugf("Device ids to add: %v", deviceIdsToAdd)
-	misc.Log.Debugf("Device ids to remove: %v", deviceIdsToRemove)
+	z2ms.log.Debug().Strs("new", relevantDeviceIds).Strs("old", oldDeviceIds).Strs("add", deviceIdsToAdd).Strs("remove", deviceIdsToRemove).Msg("Processing device list")
 
 	for _, removeId := range deviceIdsToRemove {
 		z2ms.deviceManager.RemoveDeviceById(removeId)
@@ -89,7 +89,7 @@ func (z2ms *Zigbee2MqttSubsystem) handleNewDeviceList(msg mqtt.Message) {
 		if dev != nil {
 			z2ms.deviceManager.AddDevice(dev)
 		} else {
-			misc.Log.Warnf("Could not find driver for device with id %v: %v", addId, relevantDevices[addId])
+			z2ms.log.Warn().Str("id", addId).Interface("device", relevantDevices[addId]).Msg("Could not finde driver for device")
 		}
 	}
 }

@@ -17,9 +17,10 @@ var instance *Config
 
 func GetConfig() *Config {
 	once.Do(func() {
+		log := misc.Logger("Config")
 		err := godotenv.Load()
 		if err != nil {
-			misc.Log.Info("No .env file present.")
+			log.Info().Msg("No .env file present.")
 		}
 
 		instance = &Config{

@@ -5,12 +5,14 @@ import (
 
 	"github.com/mtrossbach/waechter/config"
 	"github.com/mtrossbach/waechter/misc"
+	"github.com/rs/zerolog"
 )
 
 type WaechterSystem struct {
 	state      State
 	subsystems []Subsystem
 	devices    map[string]Device
+	log        zerolog.Logger
 }
 
 func NewWaechterSystem() *WaechterSystem {
@@ -18,6 +20,7 @@ func NewWaechterSystem() *WaechterSystem {
 		state:      Disarmed,
 		subsystems: []Subsystem{},
 		devices:    make(map[string]Device),
+		log:        misc.Logger("WaechterSystem"),
 	}
 }
 
@@ -30,7 +33,7 @@ func (ws *WaechterSystem) AddDevice(device Device) {
 	ws.devices[device.GetId()] = device
 	device.OnSystemStateChanged(ws.state)
 	device.Setup(ws)
-	misc.Log.Infof("Added device %v", DevDesc(device))
+	ws.log.Info().Str("device", DevDesc(device)).Msg("Added device.")
 }
 
 func (ws *WaechterSystem) RemoveDeviceById(id string) {
@@ -61,23 +64,23 @@ func (ws *WaechterSystem) GetDeviceById(id string) Device {
 }
 
 func (ws *WaechterSystem) ReportBattery(device Device, battery float32) {
-	misc.Log.Debugf("Got battery %v for %v", battery, DevDesc(device))
+	ws.log.Debug().Float32("battery", battery).Str("device", DevDesc(device)).Msg("Got battery info.")
 }
 
 func (ws *WaechterSystem) ReportLinkQuality(device Device, linkquality float32) {
-	misc.Log.Debugf("Got link quality %v for %v", linkquality, DevDesc(device))
+	ws.log.Debug().Float32("link", linkquality).Str("device", DevDesc(device)).Msg("Got link quality info.")
 }
 
 func (ws *WaechterSystem) ReportTampered(device Device) {
-	misc.Log.Debugf("Tamper alert %v", DevDesc(device))
+	ws.log.Debug().Str("device", DevDesc(device)).Msg("Tamper alert!")
 }
 
 func (ws *WaechterSystem) ReportTriggered(device Device) {
-	misc.Log.Debugf("Trigger alert %v", DevDesc(device))
+	ws.log.Debug().Str("device", DevDesc(device)).Msg("Triggered!")
 }
 
 func (ws *WaechterSystem) setState(state State) {
-	misc.Log.Infof("State: %v", state)
+	ws.log.Info().Str("state", string(state)).Msg("Updated state")
 	ws.state = state
 	ws.notifyState()
 }

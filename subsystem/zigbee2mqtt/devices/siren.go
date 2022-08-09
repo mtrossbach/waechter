@@ -6,18 +6,21 @@ import (
 	"github.com/mtrossbach/waechter/subsystem/zigbee2mqtt/model"
 	"github.com/mtrossbach/waechter/subsystem/zigbee2mqtt/zigbee"
 	"github.com/mtrossbach/waechter/system"
+	"github.com/rs/zerolog"
 )
 
 type genericSiren struct {
 	deviceInfo    model.Z2MDeviceInfo
 	z2mManager    *zigbee.Z2MManager
 	systemControl system.SystemControl
+	log           zerolog.Logger
 }
 
 func newGenericSiren(deviceInfo model.Z2MDeviceInfo, z2mManager *zigbee.Z2MManager) *genericSiren {
 	return &genericSiren{
 		deviceInfo: deviceInfo,
 		z2mManager: z2mManager,
+		log:        misc.Logger("Z2MSiren"),
 	}
 }
 
@@ -46,18 +49,18 @@ func (s *genericSiren) OnDeviceAnnounced() {
 }
 
 func (s *genericSiren) Setup(systemControl system.SystemControl) {
-	misc.Log.Debugf("Setup device %v:%v:%v", s.GetType(), s.GetId(), s.GetDisplayName())
+	s.log.Debug().Str("type", string(s.GetType())).Str("id", s.GetId()).Str("displayName", s.GetDisplayName()).Msg("Setup device")
 	s.systemControl = systemControl
 	s.z2mManager.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
 }
 
 func (s *genericSiren) Teardown() {
-	misc.Log.Debugf("Teardown device %v:%v:%v", s.GetType(), s.GetId(), s.GetDisplayName())
+	s.log.Debug().Str("type", string(s.GetType())).Str("id", s.GetId()).Str("displayName", s.GetDisplayName()).Msg("Tear down device")
 	s.systemControl = nil
 	s.z2mManager.Unsubscribe(s.deviceInfo.FriendlyName)
 }
 
 func (s *genericSiren) handleMessage(msg mqtt.Message) {
-	misc.Log.Debugf("Got data: %v", string(msg.Payload()))
+	s.log.Debug().RawJSON("payload", msg.Payload()).Msg("Got data")
 	//TODO
 }

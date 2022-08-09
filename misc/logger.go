@@ -1,18 +1,19 @@
 package misc
 
 import (
+	"os"
 	"sync"
+	"time"
 
-	"go.uber.org/zap"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
-var Log *zap.SugaredLogger
 var once sync.Once
 
-func InitializeLogging() {
+func Logger(component string) zerolog.Logger {
 	once.Do(func() {
-		logger, _ := zap.NewDevelopment()
-		defer logger.Sync() // flushes buffer, if any
-		Log = logger.Sugar()
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
 	})
+	return log.With().Str("component", component).Logger()
 }

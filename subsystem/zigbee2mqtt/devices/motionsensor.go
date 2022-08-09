@@ -8,6 +8,7 @@ import (
 	"github.com/mtrossbach/waechter/subsystem/zigbee2mqtt/model"
 	"github.com/mtrossbach/waechter/subsystem/zigbee2mqtt/zigbee"
 	"github.com/mtrossbach/waechter/system"
+	"github.com/rs/zerolog"
 )
 
 type motionsensorStatusPayload struct {
@@ -21,12 +22,14 @@ type genericMotionSensor struct {
 	deviceInfo    model.Z2MDeviceInfo
 	z2mManager    *zigbee.Z2MManager
 	systemControl system.SystemControl
+	log           zerolog.Logger
 }
 
 func newGenericMotionSensor(deviceInfo model.Z2MDeviceInfo, z2mManager *zigbee.Z2MManager) *genericMotionSensor {
 	return &genericMotionSensor{
 		deviceInfo: deviceInfo,
 		z2mManager: z2mManager,
+		log:        misc.Logger("Z2MMotionSensor"),
 	}
 }
 
@@ -55,13 +58,13 @@ func (s *genericMotionSensor) OnDeviceAnnounced() {
 }
 
 func (s *genericMotionSensor) Setup(systemControl system.SystemControl) {
-	misc.Log.Debugf("Setup device %v:%v:%v", s.GetType(), s.GetId(), s.GetDisplayName())
+	s.log.Debug().Str("type", string(s.GetType())).Str("id", s.GetId()).Str("displayName", s.GetDisplayName()).Msg("Setup device")
 	s.systemControl = systemControl
 	s.z2mManager.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
 }
 
 func (s *genericMotionSensor) Teardown() {
-	misc.Log.Debugf("Teardown device %v:%v:%v", s.GetType(), s.GetId(), s.GetDisplayName())
+	s.log.Debug().Str("type", string(s.GetType())).Str("id", s.GetId()).Str("displayName", s.GetDisplayName()).Msg("Tear down device")
 	s.systemControl = nil
 	s.z2mManager.Unsubscribe(s.deviceInfo.FriendlyName)
 }
@@ -69,11 +72,11 @@ func (s *genericMotionSensor) Teardown() {
 func (s *genericMotionSensor) handleMessage(msg mqtt.Message) {
 	var payload motionsensorStatusPayload
 	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
-		misc.Log.Warnf("Could not parse payload: %v", string(msg.Payload()))
+		s.log.Warn().Str("payload", string(msg.Payload())).Msg("Could not parse payload")
 		return
 	}
 
-	misc.Log.Debugf("Got data: %v", string(msg.Payload()))
+	s.log.Debug().RawJSON("payload", msg.Payload()).Msg("Got data")
 
 	if payload.Battery > 0 {
 		s.systemControl.ReportBattery(s, float32(payload.Battery)/float32(100))

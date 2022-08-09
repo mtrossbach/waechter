@@ -8,12 +8,14 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mtrossbach/waechter/config"
 	"github.com/mtrossbach/waechter/misc"
+	"github.com/rs/zerolog"
 )
 
 type Z2MManager struct {
 	config  *config.Zigbee2Mqtt
 	handler map[string]Z2MMessageHandler
 	client  mqtt.Client
+	log     zerolog.Logger
 }
 
 type Z2MMessageHandler func(mqtt.Message)
@@ -22,11 +24,12 @@ func NewZ2MManager(config *config.Zigbee2Mqtt) *Z2MManager {
 	return &Z2MManager{
 		config:  config,
 		handler: make(map[string]Z2MMessageHandler),
+		log:     misc.Logger("Z2MManager"),
 	}
 }
 
 func (z2m *Z2MManager) Connect() {
-	misc.Log.Infof("Connecting to zigbee broker: %v", z2m.config.Connection)
+	z2m.log.Info().Str("connection", z2m.config.Connection).Msg("Connecting to zigbee broker")
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(z2m.config.Connection)
 	opts.SetClientID(z2m.config.ClientId)
@@ -56,7 +59,7 @@ func (z2m *Z2MManager) Subscribe(topic string, handler Z2MMessageHandler) {
 	token := z2m.client.Subscribe(topicName, 1, nil)
 	token.Wait()
 
-	misc.Log.Debugf("Registered handler for %v", topicName)
+	z2m.log.Debug().Str("topic", topicName).Msg("Registered handler")
 }
 
 func (z2m *Z2MManager) Unsubscribe(topic string) {
@@ -69,12 +72,12 @@ func (z2m *Z2MManager) Publish(topic string, payload interface{}) {
 	topicName := fmt.Sprintf("%s/%s", z2m.config.BaseTopic, topic)
 	data, err := json.Marshal(payload)
 	if err != nil {
-		misc.Log.Warnf("Could not marshall message for %v: %v", topicName, payload)
+		z2m.log.Warn().Str("topic", topicName).Interface("payload", payload).Msg("Could not parse payload")
 		return
 	}
 
 	z2m.client.Publish(topicName, 1, false, string(data))
-	misc.Log.Debugf("Send to %v: %v", topicName, string(data))
+	z2m.log.Debug().Str("topic", topicName).RawJSON("msg", data).Msg("Sent message.")
 }
 
 func (z2m *Z2MManager) messageHandler() mqtt.MessageHandler {
@@ -83,24 +86,24 @@ func (z2m *Z2MManager) messageHandler() mqtt.MessageHandler {
 		if ok && handler != nil {
 			handler(msg)
 		} else {
-			misc.Log.Warnf("Could ot find handler for message in topic %s", msg.Topic())
+			z2m.log.Warn().Str("topic", msg.Topic()).Msg("Could not find handler for message.")
 		}
 	}
 }
 
 func (z2m *Z2MManager) onConnectHandler() mqtt.OnConnectHandler {
 	return func(client mqtt.Client) {
-		misc.Log.Infof("Connected to zigbee broker")
+		z2m.log.Info().Msg("Connected to zigbee broker")
 	}
 }
 
 func (z2m *Z2MManager) onConnectionLostHandler() mqtt.ConnectionLostHandler {
 	return func(client mqtt.Client, err error) {
-		misc.Log.Warnf("Connection to zigbee broker lost!: %v", err)
+		z2m.log.Error().Err(err).Msg("Connection to zigbee broker lost!")
 		z2m.Connect()
 
 		if len(z2m.handler) > 0 {
-			misc.Log.Debugf("There were message handlers registered before connection to broker has been established.")
+			z2m.log.Debug().Msg("There were message handlers registered before connection to broker has been established.")
 			for t, h := range z2m.handler {
 				z2m.Subscribe(t, h)
 			}

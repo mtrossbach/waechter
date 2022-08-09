@@ -1,25 +1,29 @@
 package runner
 
 import (
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	"github.com/mtrossbach/waechter/misc"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
 	"github.com/mtrossbach/waechter/subsystem/zigbee2mqtt"
 	"github.com/mtrossbach/waechter/system"
 )
 
 func Run() {
-	misc.InitializeLogging()
-	misc.Log.Info("Starting up...")
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
+
+	log.Info().Msg("Starting up...")
+
 	system := system.NewWaechterSystem()
 	system.RegisterSubsystem(zigbee2mqtt.NewZigbee2MqttSubsystem())
-	misc.Log.Info("Started.")
+	log.Info().Msg("Started.")
 
 	cancelChan := make(chan os.Signal, 1)
 	signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)
 	sig := <-cancelChan
-	log.Printf("Caught SIGTERM %v", sig)
+	log.Info().Str("sig", sig.String()).Msg("Caught SIGTERM")
 }
