@@ -12,7 +12,6 @@ import (
 )
 
 type Z2MManager struct {
-	config  *config.Zigbee2Mqtt
 	handler map[string]Z2MMessageHandler
 	client  mqtt.Client
 	log     zerolog.Logger
@@ -20,21 +19,21 @@ type Z2MManager struct {
 
 type Z2MMessageHandler func(mqtt.Message)
 
-func NewZ2MManager(config *config.Zigbee2Mqtt) *Z2MManager {
+func NewZ2MManager() *Z2MManager {
+	setupConfigDefaults()
 	return &Z2MManager{
-		config:  config,
 		handler: make(map[string]Z2MMessageHandler),
 		log:     misc.Logger("Z2MManager"),
 	}
 }
 
 func (z2m *Z2MManager) Connect() {
-	z2m.log.Info().Str("connection", z2m.config.Connection).Str("clientId", z2m.config.ClientId).Str("username", z2m.config.Username).Msg("Connecting to mqtt broker...")
+	z2m.log.Info().Str("connection", config.GetString(cConnection)).Str("clientId", config.GetString(cClientId)).Str("username", config.GetString(cUsername)).Msg("Connecting to mqtt broker...")
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker(z2m.config.Connection)
-	opts.SetClientID(z2m.config.ClientId)
-	opts.SetUsername(z2m.config.Username)
-	opts.SetPassword(z2m.config.Password)
+	opts.AddBroker(config.GetString(cConnection))
+	opts.SetClientID(config.GetString(cClientId))
+	opts.SetUsername(config.GetString(cUsername))
+	opts.SetPassword(config.GetString(cPassword))
 	opts.SetDefaultPublishHandler(z2m.messageHandler())
 
 	opts.OnConnect = z2m.onConnectHandler()
@@ -50,8 +49,8 @@ func (z2m *Z2MManager) Disconnect() {
 }
 
 func (z2m *Z2MManager) Subscribe(topic string, handler Z2MMessageHandler) {
-	topicName := fmt.Sprintf("%s/%s", z2m.config.BaseTopic, topic)
-	if strings.HasPrefix(topic, z2m.config.BaseTopic) {
+	topicName := fmt.Sprintf("%s/%s", config.GetString(cBaseTopic), topic)
+	if strings.HasPrefix(topic, config.GetString(cBaseTopic)) {
 		topicName = topic
 	}
 
@@ -66,13 +65,13 @@ func (z2m *Z2MManager) Subscribe(topic string, handler Z2MMessageHandler) {
 }
 
 func (z2m *Z2MManager) Unsubscribe(topic string) {
-	topicName := fmt.Sprintf("%s/%s", z2m.config.BaseTopic, topic)
+	topicName := fmt.Sprintf("%s/%s", config.GetString(cBaseTopic), topic)
 	z2m.client.Unsubscribe(topicName)
 	delete(z2m.handler, topicName)
 }
 
 func (z2m *Z2MManager) Publish(topic string, payload interface{}) {
-	topicName := fmt.Sprintf("%s/%s", z2m.config.BaseTopic, topic)
+	topicName := fmt.Sprintf("%s/%s", config.GetString(cBaseTopic), topic)
 	data, err := json.Marshal(payload)
 	if err != nil {
 		z2m.log.Error().Str("topic", topicName).Interface("payload", payload).Msg("Could not parse payload")

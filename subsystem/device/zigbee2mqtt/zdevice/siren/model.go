@@ -58,8 +58,8 @@ func newWarningPayload(alarmType system.AlarmType) warningPayload {
 	return warningPayload{
 		Warning: warning{
 			Mode:            mode,
-			Level:           level(config.GetConfig().General.SirenLevel),
-			StrobeLevel:     level(config.GetConfig().General.SirenLevel),
+			Level:           level(config.GetString(cLevel)),
+			StrobeLevel:     level(config.GetString(cLevel)),
 			Strobe:          true,
 			StrobeDutyCycle: 5,
 			Duration:        5,

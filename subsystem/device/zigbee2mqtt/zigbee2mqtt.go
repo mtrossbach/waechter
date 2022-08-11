@@ -2,12 +2,12 @@ package zigbee2mqtt
 
 import (
 	"encoding/json"
+
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
 	model2 "github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/model"
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/zdevice"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mtrossbach/waechter/config"
 	"github.com/mtrossbach/waechter/misc"
 	"github.com/mtrossbach/waechter/system"
 	"github.com/rs/zerolog"
@@ -20,8 +20,9 @@ type zigbee2mqtt struct {
 }
 
 func New() *zigbee2mqtt {
+
 	return &zigbee2mqtt{
-		z2mManager: connector.NewZ2MManager(config.GetConfig().Zigbee2Mqtt),
+		z2mManager: connector.NewZ2MManager(),
 		log:        misc.Logger("Zigbee2Mqtt"),
 	}
 }
