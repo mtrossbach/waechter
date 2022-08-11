@@ -1,43 +1,40 @@
 package system
 
-import "fmt"
-
 type State string
 
-//               ArmingStay -> ArmedStay -> EntryDelay -> InAlarm ->
-//             /              \            \             \           \
-// Disarmed ->                 ->------------>------------->----------->-------> Disarmed
-//             \              /            /             /           /
-//               ArmingAway -> ArmedAway -> EntryDelay -> InAlarm ->
 const (
-	Disarmed State = "Disarmed"
+	DisarmedState   State = "Disarmed"
+	ArmingState     State = "Arming"
+	ArmedState      State = "Armed"
+	EntryDelayState State = "EntryDelay"
+	InAlarmState    State = "InAlarm"
+)
 
-	ArmingStay State = "ArmingStay"
-	ArmingAway State = "ArmingAway"
+type AlarmType string
 
-	ArmedStay State = "ArmedStay"
-	ArmedAway State = "ArmedAway"
+const (
+	NoAlarm      AlarmType = "NoAlarm"
+	BurglarAlarm AlarmType = "BurglarAlarm"
+	PanicAlarm   AlarmType = "PanicAlarm"
+	FireAlarm    AlarmType = "FireAlarm"
+	TamperAlarm  AlarmType = "TamperAlarm"
+)
 
-	InAlarm State = "InAlarm"
-	Panic   State = "Panic"
+type ArmingMode string
 
-	EntryDelay State = "EntryDelay"
+const (
+	StayMode ArmingMode = "Stay"
+	AwayMode ArmingMode = "Away"
 )
 
 type DeviceType string
 
 const (
-	Unknown       DeviceType = ""
-	Keypad        DeviceType = "keypad"
-	MotionSensor  DeviceType = "motionsensor"
-	ContactSensor DeviceType = "contactsensor"
-	Siren         DeviceType = "siren"
-
-	/*
-		GasSensor
-		SmokeSensor
-		WaterLeakSensor
-	*/
+	Keypad        DeviceType = "Keypad"
+	MotionSensor  DeviceType = "MotionSensor"
+	ContactSensor DeviceType = "ContactSensor"
+	Siren         DeviceType = "Siren"
+	SmokeSensor   DeviceType = "SmokeSensor"
 )
 
 type Device interface {
@@ -46,39 +43,53 @@ type Device interface {
 	GetSubsystem() string
 	GetType() DeviceType
 
-	OnSystemStateChanged(State)
-	Setup(SystemControl)
+	OnSystemStateChanged(state State, aMode ArmingMode, aType AlarmType)
+	Setup(Controller)
 	Teardown()
 }
 
-func DevDesc(device Device) string {
-	return fmt.Sprintf("[%v:%v:%v:%v]", device.GetType(), device.GetId(), device.GetDisplayName(), device.GetSubsystem())
-}
-
-type SystemControl interface {
-	ReportBattery(Device, float32)
-	ReportLinkQuality(Device, float32)
-	ReportTampered(Device)
-	ReportTriggered(Device)
+type Controller interface {
+	Arm(mode ArmingMode, dev Device) bool
+	Disarm(pin string, dev Device) bool
+	Alarm(aType AlarmType, dev Device) bool
+	ReportBatteryLevel(level float32, dev Device)
+	ReportLinkQuality(link float32, dev Device)
 
 	GetState() State
-
-	ArmStay()
-	ArmAway()
-	Disarm(pin string)
-	Panic()
+	GetArmingMode() ArmingMode
+	GetAlarmType() AlarmType
 }
 
-type DeviceManager interface {
-	AddDevice(Device)
-	RemoveDeviceById(string)
-	HasDeviceId(string) bool
-	GetDeviceIdsForSubsystem(string) []string
-	GetDeviceById(string) Device
+type DeviceSystem interface {
+	RegisterSubsystem(subsystem DeviceSubsystem)
+	AddDevice(dev Device)
+	RemoveDeviceById(id string)
+	HasDeviceId(id string) bool
+	GetDeviceIdsForSubsystem(name string) []string
+	GetDeviceById(id string) Device
 }
 
-type Subsystem interface {
+type DeviceSubsystem interface {
 	GetName() string
-	Start(DeviceManager)
+	Start(DeviceSystem)
 	Stop()
+}
+
+type NotificationType string
+
+const (
+	AlarmNotification    NotificationType = "alarm"
+	InfoNotification     NotificationType = "info"
+	RecoveryNotification NotificationType = "recovery"
+)
+
+type Notification struct {
+	Title       string
+	Type        NotificationType
+	Description string
+}
+
+type NotifSubsystem interface {
+	GetName() string
+	SendNotification(Notification)
 }
