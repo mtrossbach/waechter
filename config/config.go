@@ -1,6 +1,8 @@
 package config
 
 import (
+	"encoding/json"
+	"log"
 	"math"
 	"os"
 	"strconv"
@@ -25,10 +27,11 @@ func GetConfig() *Config {
 
 		instance = &Config{
 			General: General{
-				ExitDelay:            s2seconds(loadEnv("WAECHTER_GENERAL_EXITDELAY"), 0),
-				EntryDelay:           s2seconds(loadEnv("WAECHTER_GENERAL_ENTRYDELAY"), 0),
+				ExitDelay:            s2seconds(loadEnv("WAECHTER_GENERAL_EXITDELAY"), 30),
+				EntryDelay:           s2seconds(loadEnv("WAECHTER_GENERAL_ENTRYDELAY"), 30),
 				TamperAlarm:          s2bool(loadEnv("WAECHTER_GENERAL_TAMPERALARM"), true),
 				Siren:                s2bool(loadEnv("WAECHTER_GENERAL_SIREN"), true),
+				SirenLevel:           loadEnvDef("WAECHTER_GENERAL_SIREN_LEVEL", "high"),
 				MaxWrongPinCount:     s2int(loadEnv("WAECHTER_GENERAL_WRONG_PIN_COUNT"), 3),
 				BatteryThresold:      s2float32(loadEnv("WAECHTER_GENERAL_BATTERY_THRESHOLD"), 0.2),
 				LinkQualityThreshold: s2float32(loadEnv("WAECHTER_GENERAL_LINKQUALITY_THREASHOLD"), 0.2),
@@ -57,6 +60,7 @@ type General struct {
 	EntryDelay           time.Duration
 	TamperAlarm          bool
 	Siren                bool
+	SirenLevel           string
 	MaxWrongPinCount     int
 	BatteryThresold      float32
 	LinkQualityThreshold float32
@@ -66,7 +70,7 @@ type Zigbee2Mqtt struct {
 	Connection string
 	ClientId   string
 	Username   string
-	Password   string
+	Password   string `json:"-"`
 	BaseTopic  string
 }
 
@@ -77,6 +81,14 @@ type DisarmPin struct {
 
 func loadEnv(key string) string {
 	return os.Getenv(key)
+}
+
+func loadEnvDef(key string, def string) string {
+	val := os.Getenv(key)
+	if len(val) > 0 {
+		return val
+	}
+	return def
 }
 
 func parsePin(input string) []DisarmPin {
@@ -136,4 +148,13 @@ func s2float32(input string, def float32) float32 {
 		return def
 	}
 	return float32(i)
+}
+
+func PrettyPrint() {
+	data, err := json.MarshalIndent(GetConfig(), "", "  ")
+	if err != nil {
+		panic(err.Error())
+	} else {
+		log.Printf("\n%s\n", string(data))
+	}
 }
