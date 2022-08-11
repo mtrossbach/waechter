@@ -3,6 +3,7 @@ package siren
 import (
 	"encoding/json"
 	"fmt"
+
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mtrossbach/waechter/config"
 	"github.com/mtrossbach/waechter/misc"
@@ -21,6 +22,7 @@ type siren struct {
 }
 
 func NewSiren(deviceInfo model2.Z2MDeviceInfo, z2mManager *connector.Z2MManager) *siren {
+	setupConfigDefaults()
 	return &siren{
 		deviceInfo:  deviceInfo,
 		z2mManager:  z2mManager,
@@ -55,7 +57,7 @@ func (s *siren) OnDeviceAnnounced() {
 
 func (s *siren) sendState() {
 	var payload warningPayload
-	if s.systemControl.GetState() == system.InAlarmState && config.GetConfig().General.Siren {
+	if s.systemControl.GetState() == system.InAlarmState && config.GetBool(cEnabled) {
 		payload = newWarningPayload(s.systemControl.GetAlarmType())
 	} else {
 		payload = newWarningPayload(system.NoAlarm)
