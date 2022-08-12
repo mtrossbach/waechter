@@ -82,7 +82,7 @@ func (ws *WaechterSystem) Disarm(enteredPin string, dev Device) bool {
 	} else {
 		ws.wrongPinCount += 1
 		if ws.wrongPinCount > config.GetInt(cMaxWrongPinCount) {
-			ws.Alarm(TamperAlarm, dev)
+			ws.Alarm(BurglarAlarm, dev)
 		}
 		return false
 	}
