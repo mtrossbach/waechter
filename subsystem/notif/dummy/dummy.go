@@ -1,6 +1,7 @@
 package dummy
 
 import (
+	"fmt"
 	"github.com/mtrossbach/waechter/misc"
 	"github.com/mtrossbach/waechter/system"
 	"github.com/rs/zerolog"
@@ -21,5 +22,5 @@ func (d *dummy) GetName() string {
 }
 
 func (d *dummy) SendNotification(notif system.Notification) {
-	d.log.Info().Str("type", string(notif.Type)).Str("title", notif.Title).Msg(notif.Description)
+	d.log.Info().Str("type", string(notif.Type)).Str("title", notif.Title).Msg(fmt.Sprintf("##### %v #####", notif.Description))
 }

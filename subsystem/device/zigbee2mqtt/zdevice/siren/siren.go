@@ -15,17 +15,16 @@ import (
 
 type siren struct {
 	deviceInfo    model2.Z2MDeviceInfo
-	z2mManager    *connector.Z2MManager
+	connector     *connector.Connector
 	systemControl system.Controller
 	log           zerolog.Logger
 	targetTopic   string
 }
 
-func NewSiren(deviceInfo model2.Z2MDeviceInfo, z2mManager *connector.Z2MManager) *siren {
-	setupConfigDefaults()
+func New(deviceInfo model2.Z2MDeviceInfo, connector *connector.Connector) *siren {
 	return &siren{
 		deviceInfo:  deviceInfo,
-		z2mManager:  z2mManager,
+		connector:   connector,
 		log:         misc.Logger("Z2MSiren"),
 		targetTopic: fmt.Sprintf("%v/set", deviceInfo.FriendlyName),
 	}
@@ -57,24 +56,24 @@ func (s *siren) OnDeviceAnnounced() {
 
 func (s *siren) sendState() {
 	var payload warningPayload
-	if s.systemControl.GetState() == system.InAlarmState && config.GetBool(cEnabled) {
+	if s.systemControl.GetAlarmType() != system.NoAlarm && config.GetBool(cEnabled) {
 		payload = newWarningPayload(s.systemControl.GetAlarmType())
 	} else {
 		payload = newWarningPayload(system.NoAlarm)
 	}
-	s.z2mManager.Publish(s.targetTopic, payload)
+	s.connector.Publish(s.targetTopic, payload)
 }
 
 func (s *siren) Setup(systemControl system.Controller) {
 	system.DevLog(s, s.log.Debug()).Msg("Setup zdevice")
 	s.systemControl = systemControl
-	s.z2mManager.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
+	s.connector.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
 }
 
 func (s *siren) Teardown() {
 	system.DevLog(s, s.log.Debug()).Msg("Teardown zdevice")
 	s.systemControl = nil
-	s.z2mManager.Unsubscribe(s.deviceInfo.FriendlyName)
+	s.connector.Unsubscribe(s.deviceInfo.FriendlyName)
 }
 
 func (s *siren) handleMessage(msg mqtt.Message) {

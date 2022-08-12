@@ -26,6 +26,15 @@ func newStatePayload(mode string, transaction *int) statePayload {
 }
 
 func systemStateToDeviceState(state system.State, aMode system.ArmingMode, aType system.AlarmType) string {
+	switch aType {
+	case system.NoAlarm:
+		break
+	case system.PanicAlarm:
+		return "panic"
+	default:
+		return "in_alarm"
+	}
+
 	switch state {
 	case system.DisarmedState:
 		return "disarm"
@@ -40,13 +49,6 @@ func systemStateToDeviceState(state system.State, aMode system.ArmingMode, aType
 		}
 	case system.EntryDelayState:
 		return "entry_delay"
-	case system.InAlarmState:
-		switch aType {
-		case system.PanicAlarm:
-			return "panic"
-		default:
-			return "in_alarm"
-		}
 	}
 	return "disarm"
 }

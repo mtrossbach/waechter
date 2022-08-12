@@ -17,7 +17,7 @@ func Init() {
 	viper.AddConfigPath("/etc/waechter/")
 	err := viper.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("fatal error config file: %w", err))
+		fmt.Errorf("%w", err)
 	}
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		fmt.Println("Config file changed:", e.Name)
@@ -53,14 +53,14 @@ func SetDefault(key string, value interface{}) {
 func Print() {
 	keys := viper.AllKeys()
 	sort.Strings(keys)
-	fmt.Printf("#################################\n")
+	fmt.Printf("########################################\n")
 	fmt.Printf("Config:\n")
 	for _, k := range keys {
-		if strings.Contains(strings.ToLower(k), "pwd") || strings.Contains(strings.ToLower(k), "password") {
-			fmt.Printf(" %v: %v\n", k, "***")
+		if strings.Contains(strings.ToLower(k), "pwd") || strings.Contains(strings.ToLower(k), "password") || strings.Contains(strings.ToLower(k), "pins") {
+			fmt.Printf("  %v: %v\n", k, "***")
 		} else {
-			fmt.Printf(" %v: %v\n", k, viper.Get(k))
+			fmt.Printf("  %v: %v\n", k, viper.Get(k))
 		}
 	}
-	fmt.Printf("#################################\n")
+	fmt.Printf("########################################\n")
 }

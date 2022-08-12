@@ -7,7 +7,6 @@ const (
 	ArmingState     State = "Arming"
 	ArmedState      State = "Armed"
 	EntryDelayState State = "EntryDelay"
-	InAlarmState    State = "InAlarm"
 )
 
 type AlarmType string
