@@ -13,15 +13,15 @@ import (
 
 type contactSensor struct {
 	deviceInfo    model2.Z2MDeviceInfo
-	z2mManager    *connector.Z2MManager
+	connector     *connector.Connector
 	systemControl system.Controller
 	log           zerolog.Logger
 }
 
-func NewContactSensor(deviceInfo model2.Z2MDeviceInfo, z2mManager *connector.Z2MManager) *contactSensor {
+func New(deviceInfo model2.Z2MDeviceInfo, connector *connector.Connector) *contactSensor {
 	return &contactSensor{
 		deviceInfo: deviceInfo,
-		z2mManager: z2mManager,
+		connector:  connector,
 		log:        misc.Logger("contactSensor"),
 	}
 }
@@ -53,13 +53,13 @@ func (s *contactSensor) OnSystemStateChanged(state system.State, aMode system.Ar
 func (s *contactSensor) Setup(systemControl system.Controller) {
 	system.DevLog(s, s.log.Debug()).Msg("Setup zdevice")
 	s.systemControl = systemControl
-	s.z2mManager.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
+	s.connector.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
 }
 
 func (s *contactSensor) Teardown() {
 	system.DevLog(s, s.log.Debug()).Msg("Teardown zdevice")
 	s.systemControl = nil
-	s.z2mManager.Unsubscribe(s.deviceInfo.FriendlyName)
+	s.connector.Unsubscribe(s.deviceInfo.FriendlyName)
 }
 
 func (s *contactSensor) handleMessage(msg mqtt.Message) {

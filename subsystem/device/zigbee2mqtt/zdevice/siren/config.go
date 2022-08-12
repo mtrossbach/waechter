@@ -7,7 +7,7 @@ const (
 	cLevel   = "siren.level"
 )
 
-func setupConfigDefaults() {
+func init() {
 	config.SetDefault(cEnabled, true)
 	config.SetDefault(cLevel, "high")
 }

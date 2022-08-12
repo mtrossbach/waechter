@@ -9,10 +9,10 @@ const (
 	cMaxWrongPinCount     = "general.maxwrongpincount"
 	cBatteryThreshold     = "general.batterythreshold"
 	cLinkQualityThreshold = "general.linkqualitythreshold"
-	cDisarmPins           = "general.disarmpins"
+	cDisarmPins           = "disarmpins"
 )
 
-func setupConfigDefaults() {
+func init() {
 	config.SetDefault(cExitDelay, 30)
 	config.SetDefault(cEntryDelay, 30)
 	config.SetDefault(cTamperAlarm, true)

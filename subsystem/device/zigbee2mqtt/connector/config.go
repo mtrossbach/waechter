@@ -1,6 +1,8 @@
 package connector
 
-import "github.com/mtrossbach/waechter/config"
+import (
+	"github.com/mtrossbach/waechter/config"
+)
 
 const (
 	cConnection = "zigbee2mqtt.connection"
@@ -10,7 +12,7 @@ const (
 	cBaseTopic  = "zigbee2mqtt.basetopic"
 )
 
-func setupConfigDefaults() {
+func init() {
 	config.SetDefault(cConnection, "mqtt://localhost:1883")
 	config.SetDefault(cBaseTopic, "zigbee2mqtt")
 }

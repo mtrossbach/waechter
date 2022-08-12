@@ -17,4 +17,5 @@
 __debug_bin
 .vscode/launch.json
 .env
-cmd/waechter/config.yaml
+config.yaml
+.idea/*

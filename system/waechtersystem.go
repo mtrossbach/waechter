@@ -19,7 +19,6 @@ type WaechterSystem struct {
 }
 
 func NewWaechterSystem() *WaechterSystem {
-	setupConfigDefaults()
 	system := &WaechterSystem{
 		state:         DisarmedState,
 		armingMode:    AwayMode,
@@ -65,7 +64,8 @@ func (ws *WaechterSystem) Disarm(enteredPin string, dev Device) bool {
 	}
 
 	pinOk := false
-	for _, pin := range config.GetStrings(cDisarmPins) {
+	disarmPins := config.GetStrings(cDisarmPins)
+	for _, pin := range disarmPins {
 		if pin == enteredPin {
 			pinOk = true
 			break
@@ -74,7 +74,7 @@ func (ws *WaechterSystem) Disarm(enteredPin string, dev Device) bool {
 
 	if pinOk {
 		ws.wrongPinCount = 0
-		if ws.state == InAlarmState {
+		if ws.alarmType != NoAlarm {
 			ws.notifSystem.NotifyRecovery(dev)
 		}
 		ws.setState(DisarmedState, ws.armingMode, NoAlarm)
@@ -89,7 +89,7 @@ func (ws *WaechterSystem) Disarm(enteredPin string, dev Device) bool {
 }
 
 func (ws *WaechterSystem) Alarm(aType AlarmType, dev Device) bool {
-	if (ws.state != ArmedState && ws.state != InAlarmState) && aType == BurglarAlarm {
+	if (ws.state != ArmedState) && aType == BurglarAlarm {
 		return false
 	}
 	if aType == TamperAlarm && !config.GetBool(cTamperAlarm) {
@@ -97,16 +97,16 @@ func (ws *WaechterSystem) Alarm(aType AlarmType, dev Device) bool {
 	}
 
 	if ws.state == ArmedState && aType == BurglarAlarm {
-		ws.setState(EntryDelayState, ws.armingMode, aType)
+		ws.setState(EntryDelayState, ws.armingMode, ws.alarmType)
 		time.AfterFunc(time.Duration(config.GetInt(cEntryDelay))*time.Second, func() {
 			if ws.state == EntryDelayState {
-				ws.setState(InAlarmState, ws.armingMode, aType)
+				ws.setState(ws.state, ws.armingMode, aType)
 				ws.notifSystem.NotifyAlarm(aType, dev)
 			}
 		})
 		return true
 	} else {
-		ws.setState(InAlarmState, ws.armingMode, aType)
+		ws.setState(ws.state, ws.armingMode, aType)
 		ws.notifSystem.NotifyAlarm(aType, dev)
 		return true
 	}
@@ -114,15 +114,15 @@ func (ws *WaechterSystem) Alarm(aType AlarmType, dev Device) bool {
 
 func (ws *WaechterSystem) ReportBatteryLevel(level float32, dev Device) {
 	if level < config.GetFloat32(cBatteryThreshold) {
-		DevLog(dev, ws.log.Info()).Float32("level", level).Msg("Battery is too low! Notify!")
+		DevLog(dev, ws.log.Info()).Float32("battery", level).Msg("Battery is too low! Notify!")
 		ws.notifSystem.NotifyLowBattery(dev, level)
 	} else {
-		DevLog(dev, ws.log.Debug()).Float32("level", level).Msg("Got battery info")
+		DevLog(dev, ws.log.Debug()).Float32("battery", level).Msg("Got battery info")
 	}
 }
 
 func (ws *WaechterSystem) ReportLinkQuality(link float32, dev Device) {
-	if ws.IsArmed() && link < config.GetFloat32(cLinkQualityThreshold) {
+	if ws.IsArmed() && link < config.GetFloat32(cLinkQualityThreshold) && config.GetBool(cTamperAlarm) {
 		DevLog(dev, ws.log.Info()).Float32("link", link).Msg("Link quality is too low! Tamper alarm!")
 		ws.Alarm(TamperAlarm, dev)
 	} else if link < config.GetFloat32(cLinkQualityThreshold) {
@@ -154,5 +154,5 @@ func (ws *WaechterSystem) setState(state State, mode ArmingMode, alarmType Alarm
 }
 
 func (ws *WaechterSystem) IsArmed() bool {
-	return ws.state == ArmedState || ws.state == InAlarmState || ws.state == EntryDelayState
+	return ws.state == ArmedState || ws.state == EntryDelayState
 }

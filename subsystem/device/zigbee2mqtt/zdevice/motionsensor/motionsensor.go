@@ -13,15 +13,15 @@ import (
 
 type motionSensor struct {
 	deviceInfo    model2.Z2MDeviceInfo
-	z2mManager    *connector.Z2MManager
+	connector     *connector.Connector
 	systemControl system.Controller
 	log           zerolog.Logger
 }
 
-func NewMotionSensor(deviceInfo model2.Z2MDeviceInfo, z2mManager *connector.Z2MManager) *motionSensor {
+func New(deviceInfo model2.Z2MDeviceInfo, connector *connector.Connector) *motionSensor {
 	return &motionSensor{
 		deviceInfo: deviceInfo,
-		z2mManager: z2mManager,
+		connector:  connector,
 		log:        misc.Logger("Z2MMotionSensor"),
 	}
 }
@@ -53,13 +53,13 @@ func (s *motionSensor) OnDeviceAnnounced() {
 func (s *motionSensor) Setup(systemControl system.Controller) {
 	system.DevLog(s, s.log.Debug()).Msg("Setup zdevice")
 	s.systemControl = systemControl
-	s.z2mManager.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
+	s.connector.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
 }
 
 func (s *motionSensor) Teardown() {
 	system.DevLog(s, s.log.Debug()).Msg("Teardown zdevice")
 	s.systemControl = nil
-	s.z2mManager.Unsubscribe(s.deviceInfo.FriendlyName)
+	s.connector.Unsubscribe(s.deviceInfo.FriendlyName)
 }
 
 func (s *motionSensor) handleMessage(msg mqtt.Message) {

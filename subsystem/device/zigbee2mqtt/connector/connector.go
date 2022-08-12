@@ -11,7 +11,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type Z2MManager struct {
+type Connector struct {
 	handler map[string]Z2MMessageHandler
 	client  mqtt.Client
 	log     zerolog.Logger
@@ -19,15 +19,14 @@ type Z2MManager struct {
 
 type Z2MMessageHandler func(mqtt.Message)
 
-func NewZ2MManager() *Z2MManager {
-	setupConfigDefaults()
-	return &Z2MManager{
+func New() *Connector {
+	return &Connector{
 		handler: make(map[string]Z2MMessageHandler),
-		log:     misc.Logger("Z2MManager"),
+		log:     misc.Logger("Z2MConnector"),
 	}
 }
 
-func (z2m *Z2MManager) Connect() {
+func (z2m *Connector) Connect() {
 	z2m.log.Info().Str("connection", config.GetString(cConnection)).Str("clientId", config.GetString(cClientId)).Str("username", config.GetString(cUsername)).Msg("Connecting to mqtt broker...")
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(config.GetString(cConnection))
@@ -44,11 +43,11 @@ func (z2m *Z2MManager) Connect() {
 	}
 }
 
-func (z2m *Z2MManager) Disconnect() {
+func (z2m *Connector) Disconnect() {
 	z2m.client.Disconnect(100)
 }
 
-func (z2m *Z2MManager) Subscribe(topic string, handler Z2MMessageHandler) {
+func (z2m *Connector) Subscribe(topic string, handler Z2MMessageHandler) {
 	topicName := fmt.Sprintf("%s/%s", config.GetString(cBaseTopic), topic)
 	if strings.HasPrefix(topic, config.GetString(cBaseTopic)) {
 		topicName = topic
@@ -64,13 +63,13 @@ func (z2m *Z2MManager) Subscribe(topic string, handler Z2MMessageHandler) {
 	}
 }
 
-func (z2m *Z2MManager) Unsubscribe(topic string) {
+func (z2m *Connector) Unsubscribe(topic string) {
 	topicName := fmt.Sprintf("%s/%s", config.GetString(cBaseTopic), topic)
 	z2m.client.Unsubscribe(topicName)
 	delete(z2m.handler, topicName)
 }
 
-func (z2m *Z2MManager) Publish(topic string, payload interface{}) {
+func (z2m *Connector) Publish(topic string, payload interface{}) {
 	topicName := fmt.Sprintf("%s/%s", config.GetString(cBaseTopic), topic)
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -82,7 +81,7 @@ func (z2m *Z2MManager) Publish(topic string, payload interface{}) {
 	z2m.log.Debug().Str("topic", topicName).RawJSON("msg", data).Msg("Sent message.")
 }
 
-func (z2m *Z2MManager) messageHandler() mqtt.MessageHandler {
+func (z2m *Connector) messageHandler() mqtt.MessageHandler {
 	return func(client mqtt.Client, msg mqtt.Message) {
 		handler, ok := z2m.handler[msg.Topic()]
 		if ok && handler != nil {
@@ -93,13 +92,13 @@ func (z2m *Z2MManager) messageHandler() mqtt.MessageHandler {
 	}
 }
 
-func (z2m *Z2MManager) onConnectHandler() mqtt.OnConnectHandler {
+func (z2m *Connector) onConnectHandler() mqtt.OnConnectHandler {
 	return func(client mqtt.Client) {
 		z2m.log.Info().Msg("Connected to mqtt broker")
 	}
 }
 
-func (z2m *Z2MManager) onConnectionLostHandler() mqtt.ConnectionLostHandler {
+func (z2m *Connector) onConnectionLostHandler() mqtt.ConnectionLostHandler {
 	return func(client mqtt.Client, err error) {
 		z2m.log.Error().Err(err).Msg("Connection to mqtt broker lost!")
 		z2m.Connect()

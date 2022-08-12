@@ -15,15 +15,15 @@ import (
 
 type zigbee2mqtt struct {
 	deviceManager system.DeviceSystem
-	z2mManager    *connector.Z2MManager
+	connector     *connector.Connector
 	log           zerolog.Logger
 }
 
 func New() *zigbee2mqtt {
 
 	return &zigbee2mqtt{
-		z2mManager: connector.NewZ2MManager(),
-		log:        misc.Logger("Zigbee2Mqtt"),
+		connector: connector.New(),
+		log:       misc.Logger("Zigbee2Mqtt"),
 	}
 }
 
@@ -33,13 +33,13 @@ func (z2ms *zigbee2mqtt) GetName() string {
 
 func (z2ms *zigbee2mqtt) Start(deviceManager system.DeviceSystem) {
 	z2ms.deviceManager = deviceManager
-	z2ms.z2mManager.Connect()
-	z2ms.z2mManager.Subscribe("bridge/devices", z2ms.handleNewDeviceList)
-	z2ms.z2mManager.Subscribe("bridge/events", z2ms.handleDeviceEvent)
+	z2ms.connector.Connect()
+	z2ms.connector.Subscribe("bridge/devices", z2ms.handleNewDeviceList)
+	z2ms.connector.Subscribe("bridge/events", z2ms.handleDeviceEvent)
 }
 
 func (z2ms *zigbee2mqtt) Stop() {
-	z2ms.z2mManager.Disconnect()
+	z2ms.connector.Disconnect()
 }
 
 func (z2ms *zigbee2mqtt) handleDeviceEvent(msg mqtt.Message) {
@@ -87,7 +87,7 @@ func (z2ms *zigbee2mqtt) handleNewDeviceList(msg mqtt.Message) {
 	}
 
 	for _, addId := range deviceIdsToAdd {
-		dev := zdevice.CreateDevice(relevantDevices[addId], z2ms.z2mManager)
+		dev := zdevice.CreateDevice(relevantDevices[addId], z2ms.connector)
 		if dev != nil {
 			z2ms.deviceManager.AddDevice(dev)
 		} else {

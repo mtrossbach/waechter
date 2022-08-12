@@ -14,16 +14,16 @@ import (
 
 type keypad struct {
 	deviceInfo    model2.Z2MDeviceInfo
-	z2mManager    *connector.Z2MManager
+	connector     *connector.Connector
 	systemControl system.Controller
 	targetTopic   string
 	log           zerolog.Logger
 }
 
-func NewKeypad(deviceInfo model2.Z2MDeviceInfo, z2mManager *connector.Z2MManager) *keypad {
+func New(deviceInfo model2.Z2MDeviceInfo, connector *connector.Connector) *keypad {
 	return &keypad{
 		deviceInfo:  deviceInfo,
-		z2mManager:  z2mManager,
+		connector:   connector,
 		targetTopic: fmt.Sprintf("%v/set", deviceInfo.FriendlyName),
 		log:         misc.Logger("Z2MKeypad"),
 	}
@@ -56,14 +56,14 @@ func (s *keypad) OnDeviceAnnounced() {
 func (s *keypad) Setup(systemControl system.Controller) {
 	system.DevLog(s, s.log.Debug()).Msg("Setup zdevice")
 	s.systemControl = systemControl
-	s.z2mManager.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
+	s.connector.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
 	s.sendState()
 }
 
 func (s *keypad) Teardown() {
 	system.DevLog(s, s.log.Debug()).Msg("Teardown zdevice")
 	s.systemControl = nil
-	s.z2mManager.Unsubscribe(s.deviceInfo.FriendlyName)
+	s.connector.Unsubscribe(s.deviceInfo.FriendlyName)
 }
 
 func (s *keypad) handleMessage(msg mqtt.Message) {
@@ -76,7 +76,8 @@ func (s *keypad) handleMessage(msg mqtt.Message) {
 	s.log.Debug().RawJSON("payload", msg.Payload()).Msg("Got data")
 
 	if payload.Battery > 0 {
-		s.systemControl.ReportBatteryLevel(float32(payload.Battery)/float32(100), s)
+		level := float32(payload.Battery) / float32(100)
+		s.systemControl.ReportBatteryLevel(level, s)
 	}
 
 	if payload.Linkquality > 0 {
@@ -104,7 +105,7 @@ func (s *keypad) handleMessage(msg mqtt.Message) {
 
 func (s *keypad) _sendState(state string, transactionId *int) {
 	payload := newStatePayload(state, transactionId)
-	s.z2mManager.Publish(s.targetTopic, payload)
+	s.connector.Publish(s.targetTopic, payload)
 }
 
 func (s *keypad) sendState() {

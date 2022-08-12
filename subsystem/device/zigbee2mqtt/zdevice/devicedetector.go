@@ -16,7 +16,7 @@ type ZDevice interface {
 	OnDeviceAnnounced()
 }
 
-func CreateDevice(deviceInfo model.Z2MDeviceInfo, z2mManager *connector.Z2MManager) system.Device {
+func CreateDevice(deviceInfo model.Z2MDeviceInfo, connector *connector.Connector) system.Device {
 	var exposes []string
 
 	for _, e := range deviceInfo.Definition.Exposes {
@@ -24,13 +24,13 @@ func CreateDevice(deviceInfo model.Z2MDeviceInfo, z2mManager *connector.Z2MManag
 	}
 
 	if misc.ContainsAll(exposes, []string{"action_code", "action"}) {
-		return keypad.NewKeypad(deviceInfo, z2mManager)
+		return keypad.New(deviceInfo, connector)
 	} else if misc.ContainsAll(exposes, []string{"warning"}) {
-		return siren.NewSiren(deviceInfo, z2mManager)
+		return siren.New(deviceInfo, connector)
 	} else if misc.ContainsAll(exposes, []string{"contact"}) {
-		return contactsensor.NewContactSensor(deviceInfo, z2mManager)
+		return contactsensor.New(deviceInfo, connector)
 	} else if misc.ContainsAll(exposes, []string{"occupancy"}) {
-		return motionsensor.NewMotionSensor(deviceInfo, z2mManager)
+		return motionsensor.New(deviceInfo, connector)
 	} else {
 		return nil
 	}
