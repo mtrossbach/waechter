@@ -3,10 +3,9 @@ package siren
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mtrossbach/waechter/internal/cfg"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mtrossbach/waechter/config"
-	"github.com/mtrossbach/waechter/misc"
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
 	model2 "github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/model"
 	"github.com/mtrossbach/waechter/system"
@@ -25,7 +24,7 @@ func New(deviceInfo model2.Z2MDeviceInfo, connector *connector.Connector) *siren
 	return &siren{
 		deviceInfo:  deviceInfo,
 		connector:   connector,
-		log:         misc.Logger("Z2MSiren"),
+		log:         cfg.Logger("Z2MSiren"),
 		targetTopic: fmt.Sprintf("%v/set", deviceInfo.FriendlyName),
 	}
 }
@@ -56,7 +55,7 @@ func (s *siren) OnDeviceAnnounced() {
 
 func (s *siren) sendState() {
 	var payload warningPayload
-	if s.systemControl.GetAlarmType() != system.NoAlarm && config.GetBool(cEnabled) {
+	if s.systemControl.GetAlarmType() != system.NoAlarm && cfg.GetBool(cEnabled) {
 		payload = newWarningPayload(s.systemControl.GetAlarmType())
 	} else {
 		payload = newWarningPayload(system.NoAlarm)

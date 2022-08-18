@@ -1,6 +1,8 @@
 package system
 
-import "github.com/mtrossbach/waechter/config"
+import (
+	"github.com/mtrossbach/waechter/internal/cfg"
+)
 
 const (
 	cExitDelay            = "general.exitdelay"
@@ -13,11 +15,11 @@ const (
 )
 
 func init() {
-	config.SetDefault(cExitDelay, 30)
-	config.SetDefault(cEntryDelay, 30)
-	config.SetDefault(cTamperAlarm, true)
-	config.SetDefault(cMaxWrongPinCount, 3)
-	config.SetDefault(cBatteryThreshold, 0.1)
-	config.SetDefault(cLinkQualityThreshold, 0.1)
-	config.SetDefault(cDisarmPins, []string{})
+	cfg.SetDefault(cExitDelay, 30)
+	cfg.SetDefault(cEntryDelay, 30)
+	cfg.SetDefault(cTamperAlarm, true)
+	cfg.SetDefault(cMaxWrongPinCount, 3)
+	cfg.SetDefault(cBatteryThreshold, 0.1)
+	cfg.SetDefault(cLinkQualityThreshold, 0.1)
+	cfg.SetDefault(cDisarmPins, []string{})
 }

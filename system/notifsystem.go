@@ -2,7 +2,7 @@ package system
 
 import (
 	"fmt"
-	"github.com/mtrossbach/waechter/misc"
+	"github.com/mtrossbach/waechter/internal/cfg"
 	"github.com/rs/zerolog"
 )
 
@@ -14,7 +14,7 @@ type notifSystem struct {
 func newNotifSystem() *notifSystem {
 	return &notifSystem{
 		notificationSubsystems: []NotifSubsystem{},
-		log:                    misc.Logger("NotifSystem"),
+		log:                    cfg.Logger("NotifSystem"),
 	}
 }
 

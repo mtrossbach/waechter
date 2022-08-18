@@ -1,7 +1,7 @@
 package siren
 
 import (
-	"github.com/mtrossbach/waechter/config"
+	"github.com/mtrossbach/waechter/internal/cfg"
 	"github.com/mtrossbach/waechter/system"
 )
 
@@ -58,8 +58,8 @@ func newWarningPayload(alarmType system.AlarmType) warningPayload {
 	return warningPayload{
 		Warning: warning{
 			Mode:            mode,
-			Level:           level(config.GetString(cLevel)),
-			StrobeLevel:     level(config.GetString(cLevel)),
+			Level:           level(cfg.GetString(cLevel)),
+			StrobeLevel:     level(cfg.GetString(cLevel)),
 			Strobe:          true,
 			StrobeDutyCycle: 5,
 			Duration:        5,

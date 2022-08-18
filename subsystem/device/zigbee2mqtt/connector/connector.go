@@ -3,11 +3,10 @@ package connector
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mtrossbach/waechter/internal/cfg"
 	"strings"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mtrossbach/waechter/config"
-	"github.com/mtrossbach/waechter/misc"
 	"github.com/rs/zerolog"
 )
 
@@ -22,17 +21,17 @@ type Z2MMessageHandler func(mqtt.Message)
 func New() *Connector {
 	return &Connector{
 		handler: make(map[string]Z2MMessageHandler),
-		log:     misc.Logger("Z2MConnector"),
+		log:     cfg.Logger("Z2MConnector"),
 	}
 }
 
 func (z2m *Connector) Connect() {
-	z2m.log.Info().Str("connection", config.GetString(cConnection)).Str("clientId", config.GetString(cClientId)).Str("username", config.GetString(cUsername)).Msg("Connecting to mqtt broker...")
+	z2m.log.Info().Str("connection", cfg.GetString(cConnection)).Str("clientId", cfg.GetString(cClientId)).Str("username", cfg.GetString(cUsername)).Msg("Connecting to mqtt broker...")
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker(config.GetString(cConnection))
-	opts.SetClientID(config.GetString(cClientId))
-	opts.SetUsername(config.GetString(cUsername))
-	opts.SetPassword(config.GetString(cPassword))
+	opts.AddBroker(cfg.GetString(cConnection))
+	opts.SetClientID(cfg.GetString(cClientId))
+	opts.SetUsername(cfg.GetString(cUsername))
+	opts.SetPassword(cfg.GetString(cPassword))
 	opts.SetDefaultPublishHandler(z2m.messageHandler())
 
 	opts.OnConnect = z2m.onConnectHandler()
@@ -48,8 +47,8 @@ func (z2m *Connector) Disconnect() {
 }
 
 func (z2m *Connector) Subscribe(topic string, handler Z2MMessageHandler) {
-	topicName := fmt.Sprintf("%s/%s", config.GetString(cBaseTopic), topic)
-	if strings.HasPrefix(topic, config.GetString(cBaseTopic)) {
+	topicName := fmt.Sprintf("%s/%s", cfg.GetString(cBaseTopic), topic)
+	if strings.HasPrefix(topic, cfg.GetString(cBaseTopic)) {
 		topicName = topic
 	}
 
@@ -64,13 +63,13 @@ func (z2m *Connector) Subscribe(topic string, handler Z2MMessageHandler) {
 }
 
 func (z2m *Connector) Unsubscribe(topic string) {
-	topicName := fmt.Sprintf("%s/%s", config.GetString(cBaseTopic), topic)
+	topicName := fmt.Sprintf("%s/%s", cfg.GetString(cBaseTopic), topic)
 	z2m.client.Unsubscribe(topicName)
 	delete(z2m.handler, topicName)
 }
 
 func (z2m *Connector) Publish(topic string, payload interface{}) {
-	topicName := fmt.Sprintf("%s/%s", config.GetString(cBaseTopic), topic)
+	topicName := fmt.Sprintf("%s/%s", cfg.GetString(cBaseTopic), topic)
 	data, err := json.Marshal(payload)
 	if err != nil {
 		z2m.log.Error().Str("topic", topicName).Interface("payload", payload).Msg("Could not parse payload")

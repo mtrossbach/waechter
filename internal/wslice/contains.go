@@ -1,4 +1,4 @@
-package misc
+package wslice
 
 func ContainsAll(s []string, e []string) bool {
 	for _, ee := range e {

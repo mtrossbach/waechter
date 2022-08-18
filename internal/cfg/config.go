@@ -1,4 +1,4 @@
-package config
+package cfg
 
 import (
 	"fmt"
@@ -19,8 +19,10 @@ func Init() {
 	if err != nil {
 		fmt.Errorf("%w", err)
 	}
+	updateLogger()
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		fmt.Println("Config file changed:", e.Name)
+		updateLogger()
 		Print()
 	})
 	viper.WatchConfig()
@@ -54,7 +56,6 @@ func Print() {
 	keys := viper.AllKeys()
 	sort.Strings(keys)
 	fmt.Printf("########################################\n")
-	fmt.Printf("Config:\n")
 	for _, k := range keys {
 		if strings.Contains(strings.ToLower(k), "pwd") || strings.Contains(strings.ToLower(k), "password") || strings.Contains(strings.ToLower(k), "pins") {
 			fmt.Printf("  %v: %v\n", k, "***")

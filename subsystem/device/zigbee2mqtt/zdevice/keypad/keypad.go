@@ -3,11 +3,11 @@ package keypad
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mtrossbach/waechter/internal/cfg"
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
 	model2 "github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/model"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mtrossbach/waechter/misc"
 	"github.com/mtrossbach/waechter/system"
 	"github.com/rs/zerolog"
 )
@@ -25,7 +25,7 @@ func New(deviceInfo model2.Z2MDeviceInfo, connector *connector.Connector) *keypa
 		deviceInfo:  deviceInfo,
 		connector:   connector,
 		targetTopic: fmt.Sprintf("%v/set", deviceInfo.FriendlyName),
-		log:         misc.Logger("Z2MKeypad"),
+		log:         cfg.Logger("Z2MKeypad"),
 	}
 }
 

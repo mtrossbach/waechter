@@ -1,23 +1,19 @@
 package main
 
 import (
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
-	"github.com/mtrossbach/waechter/config"
+	"github.com/mtrossbach/waechter/internal/cfg"
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt"
 	"github.com/mtrossbach/waechter/subsystem/notif/dummy"
 	"github.com/mtrossbach/waechter/system"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
-	config.Init()
-	config.Print()
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
+	cfg.Init()
+	cfg.Print()
 
 	log.Info().Msg("Starting up...")
 	sys := system.NewWaechterSystem()
