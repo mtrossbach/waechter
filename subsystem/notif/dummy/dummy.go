@@ -2,7 +2,7 @@ package dummy
 
 import (
 	"fmt"
-	"github.com/mtrossbach/waechter/misc"
+	"github.com/mtrossbach/waechter/internal/cfg"
 	"github.com/mtrossbach/waechter/system"
 	"github.com/rs/zerolog"
 )
@@ -13,7 +13,7 @@ type dummy struct {
 
 func New() *dummy {
 	return &dummy{
-		log: misc.Logger("DummyNotif"),
+		log: cfg.Logger("DummyNotif"),
 	}
 }
 

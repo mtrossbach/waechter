@@ -2,13 +2,14 @@ package zigbee2mqtt
 
 import (
 	"encoding/json"
+	"github.com/mtrossbach/waechter/internal/cfg"
+	"github.com/mtrossbach/waechter/internal/wslice"
 
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
 	model2 "github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/model"
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/zdevice"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mtrossbach/waechter/misc"
 	"github.com/mtrossbach/waechter/system"
 	"github.com/rs/zerolog"
 )
@@ -23,7 +24,7 @@ func New() *zigbee2mqtt {
 
 	return &zigbee2mqtt{
 		connector: connector.New(),
-		log:       misc.Logger("Zigbee2Mqtt"),
+		log:       cfg.Logger("Zigbee2Mqtt"),
 	}
 }
 
@@ -76,8 +77,8 @@ func (z2ms *zigbee2mqtt) handleNewDeviceList(msg mqtt.Message) {
 
 	oldDeviceIds := z2ms.deviceManager.GetDeviceIdsForSubsystem(z2ms.GetName())
 
-	deviceIdsToRemove := misc.StringsMissingInList(relevantDeviceIds, oldDeviceIds)
-	deviceIdsToAdd := misc.StringsMissingInList(oldDeviceIds, relevantDeviceIds)
+	deviceIdsToRemove := wslice.StringsMissingInList(relevantDeviceIds, oldDeviceIds)
+	deviceIdsToAdd := wslice.StringsMissingInList(oldDeviceIds, relevantDeviceIds)
 
 	z2ms.log.Debug().Strs("new", relevantDeviceIds).Strs("old", oldDeviceIds).Msg("Received new device list")
 	z2ms.log.Debug().Strs("add", deviceIdsToAdd).Strs("remove", deviceIdsToRemove).Msg("Merging device list")

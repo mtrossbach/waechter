@@ -1,6 +1,8 @@
 package siren
 
-import "github.com/mtrossbach/waechter/config"
+import (
+	"github.com/mtrossbach/waechter/internal/cfg"
+)
 
 const (
 	cEnabled = "siren.enabled"
@@ -8,6 +10,6 @@ const (
 )
 
 func init() {
-	config.SetDefault(cEnabled, true)
-	config.SetDefault(cLevel, "high")
+	cfg.SetDefault(cEnabled, true)
+	cfg.SetDefault(cLevel, "high")
 }

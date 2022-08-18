@@ -1,7 +1,7 @@
 package system
 
 import (
-	"github.com/mtrossbach/waechter/misc"
+	"github.com/mtrossbach/waechter/internal/cfg"
 	"github.com/rs/zerolog"
 )
 
@@ -14,7 +14,7 @@ type deviceSystem struct {
 
 func newDeviceSystem(controller Controller) *deviceSystem {
 	return &deviceSystem{
-		log:        misc.Logger("DeviceSystem"),
+		log:        cfg.Logger("DeviceSystem"),
 		subsystems: []DeviceSubsystem{},
 		devices:    make(map[string]Device),
 		controller: controller,

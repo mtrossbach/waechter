@@ -1,7 +1,7 @@
 package zdevice
 
 import (
-	"github.com/mtrossbach/waechter/misc"
+	"github.com/mtrossbach/waechter/internal/wslice"
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/model"
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/zdevice/contactsensor"
@@ -23,13 +23,13 @@ func CreateDevice(deviceInfo model.Z2MDeviceInfo, connector *connector.Connector
 		exposes = append(exposes, e.Property)
 	}
 
-	if misc.ContainsAll(exposes, []string{"action_code", "action"}) {
+	if wslice.ContainsAll(exposes, []string{"action_code", "action"}) {
 		return keypad.New(deviceInfo, connector)
-	} else if misc.ContainsAll(exposes, []string{"warning"}) {
+	} else if wslice.ContainsAll(exposes, []string{"warning"}) {
 		return siren.New(deviceInfo, connector)
-	} else if misc.ContainsAll(exposes, []string{"contact"}) {
+	} else if wslice.ContainsAll(exposes, []string{"contact"}) {
 		return contactsensor.New(deviceInfo, connector)
-	} else if misc.ContainsAll(exposes, []string{"occupancy"}) {
+	} else if wslice.ContainsAll(exposes, []string{"occupancy"}) {
 		return motionsensor.New(deviceInfo, connector)
 	} else {
 		return nil
