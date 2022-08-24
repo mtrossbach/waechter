@@ -57,7 +57,7 @@ func Print() {
 	sort.Strings(keys)
 	fmt.Printf("########################################\n")
 	for _, k := range keys {
-		if strings.Contains(strings.ToLower(k), "pwd") || strings.Contains(strings.ToLower(k), "password") || strings.Contains(strings.ToLower(k), "pins") {
+		if strings.Contains(strings.ToLower(k), "pwd") || strings.Contains(strings.ToLower(k), "password") || strings.Contains(strings.ToLower(k), "pins") || strings.Contains(strings.ToLower(k), "token") {
 			fmt.Printf("  %v: %v\n", k, "***")
 		} else {
 			fmt.Printf("  %v: %v\n", k, viper.Get(k))

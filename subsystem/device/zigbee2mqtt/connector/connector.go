@@ -77,7 +77,7 @@ func (z2m *Connector) Publish(topic string, payload interface{}) {
 	}
 
 	z2m.client.Publish(topicName, 1, false, string(data))
-	z2m.log.Debug().Str("topic", topicName).RawJSON("msg", data).Msg("Sent message.")
+	z2m.log.Debug().Str("topic", topicName).RawJSON("hamsg", data).Msg("Sent message.")
 }
 
 func (z2m *Connector) messageHandler() mqtt.MessageHandler {

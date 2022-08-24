@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/mtrossbach/waechter/internal/cfg"
-	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt"
+	"github.com/mtrossbach/waechter/subsystem/device/homeassistant"
 	"github.com/mtrossbach/waechter/subsystem/notif/dummy"
 	"github.com/mtrossbach/waechter/system"
 	"github.com/rs/zerolog/log"
@@ -17,7 +17,8 @@ func main() {
 
 	log.Info().Msg("Starting up...")
 	sys := system.NewWaechterSystem()
-	sys.RegisterDeviceSubsystem(zigbee2mqtt.New())
+	//sys.RegisterDeviceSubsystem(zigbee2mqtt.New())
+	sys.RegisterDeviceSubsystem(homeassistant.New())
 	sys.RegisterNotifSubsystem(dummy.New())
 	log.Info().Msg("Started.")
 
