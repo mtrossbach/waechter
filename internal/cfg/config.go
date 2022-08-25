@@ -5,7 +5,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
@@ -19,13 +18,6 @@ func Init() {
 	if err != nil {
 		fmt.Errorf("%w", err)
 	}
-	updateLogger()
-	viper.OnConfigChange(func(e fsnotify.Event) {
-		fmt.Println("Config file changed:", e.Name)
-		updateLogger()
-		Print()
-	})
-	viper.WatchConfig()
 }
 
 func GetBool(key string) bool {
@@ -57,7 +49,7 @@ func Print() {
 	sort.Strings(keys)
 	fmt.Printf("########################################\n")
 	for _, k := range keys {
-		if strings.Contains(strings.ToLower(k), "pwd") || strings.Contains(strings.ToLower(k), "password") || strings.Contains(strings.ToLower(k), "pins") {
+		if strings.Contains(strings.ToLower(k), "pwd") || strings.Contains(strings.ToLower(k), "password") || strings.Contains(strings.ToLower(k), "pins") || strings.Contains(strings.ToLower(k), "token") {
 			fmt.Printf("  %v: %v\n", k, "***")
 		} else {
 			fmt.Printf("  %v: %v\n", k, viper.Get(k))

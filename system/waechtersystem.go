@@ -2,9 +2,8 @@ package system
 
 import (
 	"github.com/mtrossbach/waechter/internal/cfg"
+	"github.com/mtrossbach/waechter/internal/log"
 	"time"
-
-	"github.com/rs/zerolog"
 )
 
 type WaechterSystem struct {
@@ -13,7 +12,6 @@ type WaechterSystem struct {
 	state         State
 	armingMode    ArmingMode
 	alarmType     AlarmType
-	log           zerolog.Logger
 	wrongPinCount int
 }
 
@@ -22,7 +20,6 @@ func NewWaechterSystem() *WaechterSystem {
 		state:         DisarmedState,
 		armingMode:    AwayMode,
 		alarmType:     NoAlarm,
-		log:           cfg.Logger("WaechterSystem"),
 		wrongPinCount: 0,
 	}
 
@@ -113,22 +110,22 @@ func (ws *WaechterSystem) Alarm(aType AlarmType, dev Device) bool {
 
 func (ws *WaechterSystem) ReportBatteryLevel(level float32, dev Device) {
 	if level < cfg.GetFloat32(cBatteryThreshold) {
-		DevLog(dev, ws.log.Info()).Float32("battery", level).Msg("Battery is too low! Notify!")
+		DInfo(dev).Float32("battery", level).Msg("Battery is too low! Notify!")
 		ws.notifSystem.NotifyLowBattery(dev, level)
 	} else {
-		DevLog(dev, ws.log.Debug()).Float32("battery", level).Msg("Got battery info")
+		DDebug(dev).Float32("battery", level).Msg("Got battery info")
 	}
 }
 
 func (ws *WaechterSystem) ReportLinkQuality(link float32, dev Device) {
 	if ws.IsArmed() && link < cfg.GetFloat32(cLinkQualityThreshold) && cfg.GetBool(cTamperAlarm) {
-		DevLog(dev, ws.log.Info()).Float32("link", link).Msg("Link quality is too low! Tamper alarm!")
+		DInfo(dev).Float32("link", link).Msg("Link quality is too low! Tamper alarm!")
 		ws.Alarm(TamperAlarm, dev)
 	} else if link < cfg.GetFloat32(cLinkQualityThreshold) {
-		DevLog(dev, ws.log.Info()).Float32("link", link).Msg("Link quality is too low! Notify!")
+		DInfo(dev).Float32("link", link).Msg("Link quality is too low! Notify!")
 		ws.notifSystem.NotifyLowLinkQuality(dev, link)
 	} else {
-		DevLog(dev, ws.log.Debug()).Float32("link", link).Msg("Got link quality info")
+		DDebug(dev).Float32("link", link).Msg("Got link quality info")
 	}
 }
 
@@ -148,7 +145,7 @@ func (ws *WaechterSystem) setState(state State, mode ArmingMode, alarmType Alarm
 	ws.state = state
 	ws.armingMode = mode
 	ws.alarmType = alarmType
-	ws.log.Info().Str("state", string(state)).Str("armingMode", string(mode)).Str("alarmType", string(alarmType)).Msg("System state updated")
+	log.TInfo(ws).Str("state", string(state)).Str("armingMode", string(mode)).Str("alarmType", string(alarmType)).Msg("System state updated")
 	ws.deviceSystem.UpdateSystemState()
 }
 

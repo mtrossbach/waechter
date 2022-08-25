@@ -3,37 +3,37 @@ package system
 type State string
 
 const (
-	DisarmedState   State = "Disarmed"
-	ArmingState     State = "Arming"
-	ArmedState      State = "Armed"
-	EntryDelayState State = "EntryDelay"
+	DisarmedState   State = "disarmed"
+	ArmingState     State = "arming"
+	ArmedState      State = "armed"
+	EntryDelayState State = "entry-delay"
 )
 
 type AlarmType string
 
 const (
-	NoAlarm      AlarmType = "NoAlarm"
-	BurglarAlarm AlarmType = "BurglarAlarm"
-	PanicAlarm   AlarmType = "PanicAlarm"
-	FireAlarm    AlarmType = "FireAlarm"
-	TamperAlarm  AlarmType = "TamperAlarm"
+	NoAlarm      AlarmType = "none"
+	BurglarAlarm AlarmType = "burglar"
+	PanicAlarm   AlarmType = "panic"
+	FireAlarm    AlarmType = "fire"
+	TamperAlarm  AlarmType = "tamper"
 )
 
 type ArmingMode string
 
 const (
-	StayMode ArmingMode = "Stay"
-	AwayMode ArmingMode = "Away"
+	StayMode ArmingMode = "stay"
+	AwayMode ArmingMode = "away"
 )
 
 type DeviceType string
 
 const (
-	Keypad        DeviceType = "Keypad"
-	MotionSensor  DeviceType = "MotionSensor"
-	ContactSensor DeviceType = "ContactSensor"
-	Siren         DeviceType = "Siren"
-	SmokeSensor   DeviceType = "SmokeSensor"
+	Keypad        DeviceType = "keypad"
+	MotionSensor  DeviceType = "motion"
+	ContactSensor DeviceType = "contact"
+	Siren         DeviceType = "siren"
+	SmokeSensor   DeviceType = "smoke"
 )
 
 type Device interface {

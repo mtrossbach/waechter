@@ -3,13 +3,12 @@ package keypad
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mtrossbach/waechter/internal/cfg"
+	"github.com/mtrossbach/waechter/internal/log"
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
 	model2 "github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/model"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mtrossbach/waechter/system"
-	"github.com/rs/zerolog"
 )
 
 type keypad struct {
@@ -17,7 +16,6 @@ type keypad struct {
 	connector     *connector.Connector
 	systemControl system.Controller
 	targetTopic   string
-	log           zerolog.Logger
 }
 
 func New(deviceInfo model2.Z2MDeviceInfo, connector *connector.Connector) *keypad {
@@ -25,7 +23,6 @@ func New(deviceInfo model2.Z2MDeviceInfo, connector *connector.Connector) *keypa
 		deviceInfo:  deviceInfo,
 		connector:   connector,
 		targetTopic: fmt.Sprintf("%v/set", deviceInfo.FriendlyName),
-		log:         cfg.Logger("Z2MKeypad"),
 	}
 }
 
@@ -54,14 +51,12 @@ func (s *keypad) OnDeviceAnnounced() {
 }
 
 func (s *keypad) Setup(systemControl system.Controller) {
-	system.DevLog(s, s.log.Debug()).Msg("Setup zdevice")
 	s.systemControl = systemControl
 	s.connector.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
 	s.sendState()
 }
 
 func (s *keypad) Teardown() {
-	system.DevLog(s, s.log.Debug()).Msg("Teardown zdevice")
 	s.systemControl = nil
 	s.connector.Unsubscribe(s.deviceInfo.FriendlyName)
 }
@@ -69,11 +64,11 @@ func (s *keypad) Teardown() {
 func (s *keypad) handleMessage(msg mqtt.Message) {
 	var payload statusPayload
 	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
-		s.log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse payload")
+		log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse payload")
 		return
 	}
 
-	s.log.Debug().RawJSON("payload", msg.Payload()).Msg("Got data")
+	log.Debug().RawJSON("payload", msg.Payload()).Msg("Got data")
 
 	if payload.Battery > 0 {
 		level := float32(payload.Battery) / float32(100)

@@ -2,29 +2,26 @@ package system
 
 import (
 	"fmt"
-	"github.com/mtrossbach/waechter/internal/cfg"
-	"github.com/rs/zerolog"
+	"github.com/mtrossbach/waechter/internal/log"
 )
 
 type notifSystem struct {
 	notificationSubsystems []NotifSubsystem
-	log                    zerolog.Logger
 }
 
 func newNotifSystem() *notifSystem {
 	return &notifSystem{
 		notificationSubsystems: []NotifSubsystem{},
-		log:                    cfg.Logger("NotifSystem"),
 	}
 }
 
 func (ws *notifSystem) RegisterSubsystem(system NotifSubsystem) {
 	ws.notificationSubsystems = append(ws.notificationSubsystems, system)
-	ws.log.Info().Str("name", system.GetName()).Msg("Registered new external notif system")
+	log.Info().Str("name", system.GetName()).Msg("Registered new external notif system")
 }
 
 func (ws *notifSystem) send(notification Notification) {
-	ws.log.Info().Str("title", notification.Title).Str("type", string(notification.Type)).Str("description", notification.Description).Msg("Sending notifications ...")
+	log.Info().Str("title", notification.Title).Str("type", string(notification.Type)).Str("description", notification.Description).Msg("Sending notifications ...")
 	for _, ns := range ws.notificationSubsystems {
 		ns.SendNotification(notification)
 	}
