@@ -3,37 +3,41 @@ package system
 import (
 	"github.com/mtrossbach/waechter/internal/cfg"
 	"github.com/mtrossbach/waechter/internal/log"
+	"sync"
 	"time"
 )
 
 type WaechterSystem struct {
-	notifSystem   notifSystem
-	deviceSystem  deviceSystem
 	state         State
 	armingMode    ArmingMode
 	alarmType     AlarmType
 	wrongPinCount int
+
+	stateUpdateHandlers  sync.Map
+	notificationHandlers []NotificationFunc
 }
 
 func NewWaechterSystem() *WaechterSystem {
-	system := &WaechterSystem{
-		state:         DisarmedState,
-		armingMode:    AwayMode,
-		alarmType:     NoAlarm,
-		wrongPinCount: 0,
+	return &WaechterSystem{
+		state:                DisarmedState,
+		armingMode:           AwayMode,
+		alarmType:            NoAlarm,
+		wrongPinCount:        0,
+		stateUpdateHandlers:  sync.Map{},
+		notificationHandlers: []NotificationFunc{},
 	}
-
-	system.deviceSystem = *newDeviceSystem(system)
-	system.notifSystem = *newNotifSystem()
-	return system
 }
 
-func (ws *WaechterSystem) RegisterDeviceSubsystem(subsystem DeviceSubsystem) {
-	ws.deviceSystem.RegisterSubsystem(subsystem)
+func (ws *WaechterSystem) SubscribeStateUpdate(id interface{}, fun StateUpdateFunc) {
+	ws.stateUpdateHandlers.Store(id, fun)
 }
 
-func (ws *WaechterSystem) RegisterNotifSubsystem(subsystem NotifSubsystem) {
-	ws.notifSystem.RegisterSubsystem(subsystem)
+func (ws *WaechterSystem) UnsubscribeStateUpdate(id interface{}) {
+	ws.stateUpdateHandlers.Delete(id)
+}
+
+func (ws *WaechterSystem) AddNotificationHandler(fun NotificationFunc) {
+	ws.notificationHandlers = append(ws.notificationHandlers, fun)
 }
 
 func (ws *WaechterSystem) Arm(mode ArmingMode, dev Device) bool {
@@ -47,7 +51,7 @@ func (ws *WaechterSystem) Arm(mode ArmingMode, dev Device) bool {
 		return true
 	} else {
 		// Requesting device probably has a wrong system state -> update it
-		ws.deviceSystem.UpdateSystemStateOnDevice(dev)
+		ws.notifyStateHandlers()
 		return false
 	}
 }
@@ -55,7 +59,7 @@ func (ws *WaechterSystem) Arm(mode ArmingMode, dev Device) bool {
 func (ws *WaechterSystem) Disarm(enteredPin string, dev Device) bool {
 	if ws.state == DisarmedState {
 		// Requesting device probably has a wrong system state -> update it
-		ws.deviceSystem.UpdateSystemStateOnDevice(dev)
+		ws.notifyStateHandlers()
 		return false
 	}
 
@@ -71,7 +75,7 @@ func (ws *WaechterSystem) Disarm(enteredPin string, dev Device) bool {
 	if pinOk {
 		ws.wrongPinCount = 0
 		if ws.alarmType != NoAlarm {
-			ws.notifSystem.NotifyRecovery(dev)
+			ws.notifyNotification(recoveryNotification(dev))
 		}
 		ws.setState(DisarmedState, ws.armingMode, NoAlarm)
 		return true
@@ -97,13 +101,13 @@ func (ws *WaechterSystem) Alarm(aType AlarmType, dev Device) bool {
 		time.AfterFunc(time.Duration(cfg.GetInt(cEntryDelay))*time.Second, func() {
 			if ws.state == EntryDelayState {
 				ws.setState(ws.state, ws.armingMode, aType)
-				ws.notifSystem.NotifyAlarm(aType, dev)
+				ws.notifyNotification(alarmNotification(aType, dev))
 			}
 		})
 		return true
 	} else {
 		ws.setState(ws.state, ws.armingMode, aType)
-		ws.notifSystem.NotifyAlarm(aType, dev)
+		ws.notifyNotification(alarmNotification(aType, dev))
 		return true
 	}
 }
@@ -111,7 +115,7 @@ func (ws *WaechterSystem) Alarm(aType AlarmType, dev Device) bool {
 func (ws *WaechterSystem) ReportBatteryLevel(level float32, dev Device) {
 	if level < cfg.GetFloat32(cBatteryThreshold) {
 		DInfo(dev).Float32("battery", level).Msg("Battery is too low! Notify!")
-		ws.notifSystem.NotifyLowBattery(dev, level)
+		ws.notifyNotification(lowBatteryNotification(dev, level))
 	} else {
 		DDebug(dev).Float32("battery", level).Msg("Got battery info")
 	}
@@ -123,7 +127,7 @@ func (ws *WaechterSystem) ReportLinkQuality(link float32, dev Device) {
 		ws.Alarm(TamperAlarm, dev)
 	} else if link < cfg.GetFloat32(cLinkQualityThreshold) {
 		DInfo(dev).Float32("link", link).Msg("Link quality is too low! Notify!")
-		ws.notifSystem.NotifyLowLinkQuality(dev, link)
+		ws.notifyNotification(lowBatteryNotification(dev, link))
 	} else {
 		DDebug(dev).Float32("link", link).Msg("Got link quality info")
 	}
@@ -146,7 +150,26 @@ func (ws *WaechterSystem) setState(state State, mode ArmingMode, alarmType Alarm
 	ws.armingMode = mode
 	ws.alarmType = alarmType
 	log.TInfo(ws).Str("state", string(state)).Str("armingMode", string(mode)).Str("alarmType", string(alarmType)).Msg("System state updated")
-	ws.deviceSystem.UpdateSystemState()
+	ws.notifyStateHandlers()
+}
+
+func (ws *WaechterSystem) notifyStateHandlers() {
+	ws.stateUpdateHandlers.Range(func(_, value any) bool {
+		handler := value.(StateUpdateFunc)
+		handler(ws.state, ws.armingMode, ws.alarmType)
+		return true
+	})
+}
+
+func (ws *WaechterSystem) notifyNotification(note *Notification) {
+	if note == nil {
+		return
+	}
+	for _, h := range ws.notificationHandlers {
+		if h(*note) {
+			return
+		}
+	}
 }
 
 func (ws *WaechterSystem) IsArmed() bool {

@@ -8,43 +8,38 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
-	model2 "github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/model"
 	"github.com/mtrossbach/waechter/system"
 )
 
 type siren struct {
-	deviceInfo    model2.Z2MDeviceInfo
+	system.Device
 	connector     *connector.Connector
 	systemControl system.Controller
-	targetTopic   string
+	writeTopic    string
+	readTopic     string
 }
 
-func New(deviceInfo model2.Z2MDeviceInfo, connector *connector.Connector) *siren {
+func New(device system.Device) *siren {
 	return &siren{
-		deviceInfo:  deviceInfo,
-		connector:   connector,
-		targetTopic: fmt.Sprintf("%v/set", deviceInfo.FriendlyName),
+		Device: system.Device{
+			Id:   device.Id,
+			Name: device.Name,
+			Type: system.Siren,
+		},
+		readTopic:  device.Name,
+		writeTopic: fmt.Sprintf("%v/set", device.Name),
 	}
 }
 
-func (s *siren) GetId() string {
-	return s.deviceInfo.IeeeAddress
-}
-
-func (s *siren) GetDisplayName() string {
-	return s.deviceInfo.FriendlyName
-}
-
-func (s *siren) GetSubsystem() string {
-	return model2.SubsystemName
-}
-
-func (s *siren) GetType() system.DeviceType {
-	return system.Siren
-}
-
-func (s *siren) OnSystemStateChanged(state system.State, aMode system.ArmingMode, aType system.AlarmType) {
+func (s *siren) UpdateState(state system.State, armingMode system.ArmingMode, alarmType system.AlarmType) {
 	s.sendState()
+}
+
+func (s *siren) Setup(connector *connector.Connector, systemControl system.Controller) {
+	s.systemControl = systemControl
+	s.connector = connector
+	s.connector.Subscribe(s.readTopic, s.handleMessage)
+	system.DInfo(s.Device).Msg("Activated.")
 }
 
 func (s *siren) OnDeviceAnnounced() {
@@ -58,17 +53,14 @@ func (s *siren) sendState() {
 	} else {
 		payload = newWarningPayload(system.NoAlarm)
 	}
-	s.connector.Publish(s.targetTopic, payload)
-}
-
-func (s *siren) Setup(systemControl system.Controller) {
-	s.systemControl = systemControl
-	s.connector.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
+	s.connector.Publish(s.writeTopic, payload)
 }
 
 func (s *siren) Teardown() {
 	s.systemControl = nil
-	s.connector.Unsubscribe(s.deviceInfo.FriendlyName)
+	s.connector.Unsubscribe(s.readTopic)
+	s.connector = nil
+	system.DInfo(s.Device).Msg("Deactivated.")
 }
 
 func (s *siren) handleMessage(msg mqtt.Message) {
@@ -81,14 +73,14 @@ func (s *siren) handleMessage(msg mqtt.Message) {
 	log.Debug().Str("payload", string(msg.Payload())).Msg("Got data")
 
 	if payload.Battery > 0 {
-		s.systemControl.ReportBatteryLevel(float32(payload.Battery)/float32(100), s)
+		s.systemControl.ReportBatteryLevel(float32(payload.Battery)/float32(100), s.Device)
 	}
 
 	if payload.Linkquality > 0 {
-		s.systemControl.ReportLinkQuality(float32(payload.Linkquality)/float32(255), s)
+		s.systemControl.ReportLinkQuality(float32(payload.Linkquality)/float32(255), s.Device)
 	}
 
 	if payload.Tamper {
-		s.systemControl.Alarm(system.TamperAlarm, s)
+		s.systemControl.Alarm(system.TamperAlarm, s.Device)
 	}
 }

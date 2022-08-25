@@ -1,4 +1,4 @@
-package zdevice
+package zigbee2mqtt
 
 import (
 	"github.com/mtrossbach/waechter/internal/wslice"
@@ -12,25 +12,33 @@ import (
 )
 
 type ZDevice interface {
-	system.Device
 	OnDeviceAnnounced()
+	UpdateState(state system.State, armingMode system.ArmingMode, alarmType system.AlarmType)
+	Setup(connector *connector.Connector, systemControl system.Controller)
+	Teardown()
 }
 
-func CreateDevice(deviceInfo model.Z2MDeviceInfo, connector *connector.Connector) system.Device {
+func createDevice(deviceInfo model.Z2MDeviceInfo) ZDevice {
 	var exposes []string
 
 	for _, e := range deviceInfo.Definition.Exposes {
 		exposes = append(exposes, e.Property)
 	}
 
+	device := system.Device{
+		Id:   ieee2Id(deviceInfo.IeeeAddress),
+		Name: deviceInfo.FriendlyName,
+		Type: "",
+	}
+
 	if wslice.ContainsAll(exposes, []string{"action_code", "action"}) {
-		return keypad.New(deviceInfo, connector)
+		return keypad.New(device)
 	} else if wslice.ContainsAll(exposes, []string{"warning"}) {
-		return siren.New(deviceInfo, connector)
+		return siren.New(device)
 	} else if wslice.ContainsAll(exposes, []string{"contact"}) {
-		return contactsensor.New(deviceInfo, connector)
+		return contactsensor.New(device)
 	} else if wslice.ContainsAll(exposes, []string{"occupancy"}) {
-		return motionsensor.New(deviceInfo, connector)
+		return motionsensor.New(device)
 	} else {
 		return nil
 	}

@@ -2,38 +2,41 @@ package zigbee2mqtt
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/mtrossbach/waechter/internal/log"
-	"github.com/mtrossbach/waechter/internal/wslice"
-
-	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
-	model2 "github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/model"
-	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/zdevice"
+	"sync"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
+	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/model"
 	"github.com/mtrossbach/waechter/system"
 )
 
 type zigbee2mqtt struct {
-	deviceManager system.DeviceSystem
-	connector     *connector.Connector
+	systemController system.Controller
+	connector        *connector.Connector
+	devices          sync.Map
 }
 
 func New() *zigbee2mqtt {
-
 	return &zigbee2mqtt{
 		connector: connector.New(),
 	}
 }
 
-func (z2ms *zigbee2mqtt) GetName() string {
-	return model2.SubsystemName
-}
-
-func (z2ms *zigbee2mqtt) Start(deviceManager system.DeviceSystem) {
-	z2ms.deviceManager = deviceManager
+func (z2ms *zigbee2mqtt) Start(systemController system.Controller) {
+	z2ms.systemController = systemController
+	systemController.SubscribeStateUpdate(z2ms, z2ms.updateState)
 	z2ms.connector.Connect()
 	z2ms.connector.Subscribe("bridge/devices", z2ms.handleNewDeviceList)
 	z2ms.connector.Subscribe("bridge/event", z2ms.handleDeviceEvent)
+}
+
+func (z2ms *zigbee2mqtt) updateState(state system.State, armingMode system.ArmingMode, alarmType system.AlarmType) {
+	z2ms.devices.Range(func(_, value any) bool {
+		(value.(ZDevice)).UpdateState(state, armingMode, alarmType)
+		return true
+	})
 }
 
 func (z2ms *zigbee2mqtt) Stop() {
@@ -41,55 +44,52 @@ func (z2ms *zigbee2mqtt) Stop() {
 }
 
 func (z2ms *zigbee2mqtt) handleDeviceEvent(msg mqtt.Message) {
-	var deviceEvent model2.DeviceEvent
+	var deviceEvent model.DeviceEvent
 	if err := json.Unmarshal(msg.Payload(), &deviceEvent); err != nil {
 		log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse zdevice event!")
 		return
 	}
 
 	if deviceEvent.Type == "device_announce" && len(deviceEvent.Data.IeeeAddress) > 0 {
-		device := z2ms.deviceManager.GetDeviceById(deviceEvent.Data.IeeeAddress)
-		zdev, ok := device.(zdevice.ZDevice)
+		dev, ok := z2ms.devices.Load(ieee2Id(deviceEvent.Data.IeeeAddress))
 		if ok {
-			zdev.OnDeviceAnnounced()
+			zdev, ok := dev.(ZDevice)
+			if ok {
+				zdev.OnDeviceAnnounced()
+			}
 		}
 	}
 }
 
 func (z2ms *zigbee2mqtt) handleNewDeviceList(msg mqtt.Message) {
-	var newDevices []model2.Z2MDeviceInfo
+	var newDevices []model.Z2MDeviceInfo
 	if err := json.Unmarshal(msg.Payload(), &newDevices); err != nil {
 		log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse devices payload!")
 		return
 	}
 
-	var relevantDeviceIds []string
-	relevantDevices := make(map[string]model2.Z2MDeviceInfo)
+	relevantDevices := make(map[string]model.Z2MDeviceInfo)
 	for _, device := range newDevices {
 		if device.Type == "EndDevice" && device.Supported {
-			relevantDeviceIds = append(relevantDeviceIds, device.IeeeAddress)
 			relevantDevices[device.IeeeAddress] = device
 		}
 	}
 
-	oldDeviceIds := z2ms.deviceManager.GetDeviceIdsForSubsystem(z2ms.GetName())
+	z2ms.devices.Range(func(_, value any) bool {
+		value.(ZDevice).Teardown()
+		return true
+	})
 
-	deviceIdsToRemove := wslice.StringsMissingInList(relevantDeviceIds, oldDeviceIds)
-	deviceIdsToAdd := wslice.StringsMissingInList(oldDeviceIds, relevantDeviceIds)
-
-	log.Debug().Strs("new", relevantDeviceIds).Strs("old", oldDeviceIds).Msg("Received new device list")
-	log.Debug().Strs("add", deviceIdsToAdd).Strs("remove", deviceIdsToRemove).Msg("Merging device list")
-
-	for _, removeId := range deviceIdsToRemove {
-		z2ms.deviceManager.RemoveDeviceById(removeId)
-	}
-
-	for _, addId := range deviceIdsToAdd {
-		dev := zdevice.CreateDevice(relevantDevices[addId], z2ms.connector)
+	z2ms.devices = sync.Map{}
+	for _, d := range relevantDevices {
+		dev := createDevice(d)
 		if dev != nil {
-			z2ms.deviceManager.AddDevice(dev)
-		} else {
-			log.Error().Str("id", addId).Interface("zdevice", relevantDevices[addId]).Msg("Could not find driver for device. Device will not be added to the system.")
+			dev.Setup(z2ms.connector, z2ms.systemController)
+			z2ms.devices.Store(ieee2Id(d.IeeeAddress), dev)
 		}
 	}
+}
+
+func ieee2Id(ieeeAddress string) string {
+	return fmt.Sprintf("%v-%v", "z2m", ieeeAddress)
 }

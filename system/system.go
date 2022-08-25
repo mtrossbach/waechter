@@ -36,16 +36,14 @@ const (
 	SmokeSensor   DeviceType = "smoke"
 )
 
-type Device interface {
-	GetId() string
-	GetDisplayName() string
-	GetSubsystem() string
-	GetType() DeviceType
-
-	OnSystemStateChanged(state State, aMode ArmingMode, aType AlarmType)
-	Setup(Controller)
-	Teardown()
+type Device struct {
+	Id   string     `json:"id"`
+	Name string     `json:"name"`
+	Type DeviceType `json:"type"`
 }
+
+type StateUpdateFunc func(state State, armingMode ArmingMode, alarmType AlarmType)
+type NotificationFunc func(note Notification) bool
 
 type Controller interface {
 	Arm(mode ArmingMode, dev Device) bool
@@ -57,38 +55,7 @@ type Controller interface {
 	GetState() State
 	GetArmingMode() ArmingMode
 	GetAlarmType() AlarmType
-}
 
-type DeviceSystem interface {
-	RegisterSubsystem(subsystem DeviceSubsystem)
-	AddDevice(dev Device)
-	RemoveDeviceById(id string)
-	HasDeviceId(id string) bool
-	GetDeviceIdsForSubsystem(name string) []string
-	GetDeviceById(id string) Device
-}
-
-type DeviceSubsystem interface {
-	GetName() string
-	Start(DeviceSystem)
-	Stop()
-}
-
-type NotificationType string
-
-const (
-	AlarmNotification    NotificationType = "alarm"
-	InfoNotification     NotificationType = "info"
-	RecoveryNotification NotificationType = "recovery"
-)
-
-type Notification struct {
-	Title       string
-	Type        NotificationType
-	Description string
-}
-
-type NotifSubsystem interface {
-	GetName() string
-	SendNotification(Notification)
+	SubscribeStateUpdate(id interface{}, fun StateUpdateFunc)
+	UnsubscribeStateUpdate(id interface{})
 }
