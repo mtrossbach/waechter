@@ -3,62 +3,51 @@ package keypad
 import (
 	"encoding/json"
 	"fmt"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mtrossbach/waechter/internal/log"
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
-	model2 "github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/model"
-
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mtrossbach/waechter/system"
 )
 
 type keypad struct {
-	deviceInfo    model2.Z2MDeviceInfo
+	system.Device
 	connector     *connector.Connector
 	systemControl system.Controller
-	targetTopic   string
+	writeTopic    string
+	readTopic     string
 }
 
-func New(deviceInfo model2.Z2MDeviceInfo, connector *connector.Connector) *keypad {
+func New(device system.Device) *keypad {
 	return &keypad{
-		deviceInfo:  deviceInfo,
-		connector:   connector,
-		targetTopic: fmt.Sprintf("%v/set", deviceInfo.FriendlyName),
+		Device: system.Device{
+			Id:   device.Id,
+			Name: device.Name,
+			Type: system.Keypad,
+		},
+		readTopic:  device.Name,
+		writeTopic: fmt.Sprintf("%v/set", device.Name),
 	}
 }
 
-func (s *keypad) GetId() string {
-	return s.deviceInfo.IeeeAddress
-}
-
-func (s *keypad) GetDisplayName() string {
-	return s.deviceInfo.FriendlyName
-}
-
-func (s *keypad) GetSubsystem() string {
-	return model2.SubsystemName
-}
-
-func (s *keypad) GetType() system.DeviceType {
-	return system.Keypad
-}
-
-func (s *keypad) OnSystemStateChanged(state system.State, aMode system.ArmingMode, aType system.AlarmType) {
+func (s *keypad) UpdateState(state system.State, armingMode system.ArmingMode, alarmType system.AlarmType) {
 	s.sendState()
 }
 
-func (s *keypad) OnDeviceAnnounced() {
-	s.sendState()
-}
-
-func (s *keypad) Setup(systemControl system.Controller) {
+func (s *keypad) Setup(connector *connector.Connector, systemControl system.Controller) {
 	s.systemControl = systemControl
-	s.connector.Subscribe(s.deviceInfo.FriendlyName, s.handleMessage)
+	s.connector = connector
+	s.connector.Subscribe(s.readTopic, s.handleMessage)
+	system.DInfo(s.Device).Msg("Activated.")
+	s.sendState()
+}
+func (s *keypad) OnDeviceAnnounced() {
 	s.sendState()
 }
 
 func (s *keypad) Teardown() {
 	s.systemControl = nil
-	s.connector.Unsubscribe(s.deviceInfo.FriendlyName)
+	s.connector.Unsubscribe(s.readTopic)
+	system.DInfo(s.Device).Msg("Deactivated.")
 }
 
 func (s *keypad) handleMessage(msg mqtt.Message) {
@@ -72,35 +61,35 @@ func (s *keypad) handleMessage(msg mqtt.Message) {
 
 	if payload.Battery > 0 {
 		level := float32(payload.Battery) / float32(100)
-		s.systemControl.ReportBatteryLevel(level, s)
+		s.systemControl.ReportBatteryLevel(level, s.Device)
 	}
 
 	if payload.Linkquality > 0 {
-		s.systemControl.ReportLinkQuality(float32(payload.Linkquality)/float32(255), s)
+		s.systemControl.ReportLinkQuality(float32(payload.Linkquality)/float32(255), s.Device)
 	}
 
 	if payload.Tamper {
-		s.systemControl.Alarm(system.TamperAlarm, s)
+		s.systemControl.Alarm(system.TamperAlarm, s.Device)
 	}
 
 	if len(payload.Action) > 0 {
 		s._sendState(payload.Action, &payload.ActionTransaction) //Send confirmation (required for some devices)
 
 		if payload.Action == "arm_day_zones" {
-			s.systemControl.Arm(system.StayMode, s)
+			s.systemControl.Arm(system.StayMode, s.Device)
 		} else if payload.Action == "arm_all_zones" {
-			s.systemControl.Arm(system.AwayMode, s)
+			s.systemControl.Arm(system.AwayMode, s.Device)
 		} else if payload.Action == "disarm" {
-			s.systemControl.Disarm(payload.ActionCode, s)
+			s.systemControl.Disarm(payload.ActionCode, s.Device)
 		} else if payload.Action == "panic" {
-			s.systemControl.Alarm(system.PanicAlarm, s)
+			s.systemControl.Alarm(system.PanicAlarm, s.Device)
 		}
 	}
 }
 
 func (s *keypad) _sendState(state string, transactionId *int) {
 	payload := newStatePayload(state, transactionId)
-	s.connector.Publish(s.targetTopic, payload)
+	s.connector.Publish(s.writeTopic, payload)
 }
 
 func (s *keypad) sendState() {

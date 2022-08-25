@@ -19,9 +19,9 @@ func main() {
 
 	log.Info().Msg("Starting up...")
 	sys := system.NewWaechterSystem()
-	sys.RegisterDeviceSubsystem(zigbee2mqtt.New())
-	sys.RegisterDeviceSubsystem(homeassistant.New())
-	sys.RegisterNotifSubsystem(dummy.New())
+	zigbee2mqtt.New().Start(sys)
+	homeassistant.New().Start(sys)
+	sys.AddNotificationHandler(dummy.New().SendNotification)
 	log.Info().Msg("Started.")
 
 	cancelChan := make(chan os.Signal, 1)

@@ -3,42 +3,31 @@ package device
 import (
 	"encoding/json"
 	"github.com/mtrossbach/waechter/subsystem/device/homeassistant/api"
-	"github.com/mtrossbach/waechter/subsystem/device/homeassistant/model"
 	"github.com/mtrossbach/waechter/subsystem/device/homeassistant/msgs"
 	"github.com/mtrossbach/waechter/system"
 	"log"
 )
 
 type motionSensor struct {
-	api           *api.Api
+	system.Device
 	entityId      string
-	friendlyName  string
+	api           *api.Api
 	systemControl system.Controller
 	subId         uint64
 }
 
-func NewMotionSensor(api *api.Api, entityId string, friendlyName string) *motionSensor {
-	return &motionSensor{api: api, entityId: entityId, friendlyName: friendlyName}
-}
-
-func (s *motionSensor) GetId() string {
-	return s.entityId
-}
-
-func (s *motionSensor) GetDisplayName() string {
-	return s.friendlyName
-}
-
-func (s *motionSensor) GetSubsystem() string {
-	return model.SubsystemName
-}
-
-func (s *motionSensor) GetType() system.DeviceType {
-	return system.MotionSensor
-}
-
-func (s *motionSensor) OnSystemStateChanged(state system.State, aMode system.ArmingMode, aType system.AlarmType) {
-
+func NewMotionSensor(device system.Device, api *api.Api, entityId string) *motionSensor {
+	return &motionSensor{
+		Device: system.Device{
+			Id:   device.Id,
+			Name: device.Name,
+			Type: system.MotionSensor,
+		},
+		api:           api,
+		systemControl: nil,
+		entityId:      entityId,
+		subId:         0,
+	}
 }
 
 func (s *motionSensor) Setup(controller system.Controller) {
@@ -66,7 +55,7 @@ func (s *motionSensor) subscribe() {
 			log.Println(err.Error())
 		}
 		if event.Event.Variables.Trigger.ToState.State == "on" {
-			s.systemControl.Alarm(system.BurglarAlarm, s)
+			s.systemControl.Alarm(system.BurglarAlarm, s.Device)
 		}
 	}
 }

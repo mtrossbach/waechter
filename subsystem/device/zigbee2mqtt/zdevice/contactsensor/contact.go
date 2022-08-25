@@ -1,4 +1,4 @@
-package motionsensor
+package contactsensor
 
 import (
 	"encoding/json"
@@ -8,15 +8,15 @@ import (
 	"github.com/mtrossbach/waechter/system"
 )
 
-type motionSensor struct {
+type contactSensor struct {
 	system.Device
 	connector     *connector.Connector
 	systemControl system.Controller
 	readTopic     string
 }
 
-func New(device system.Device) *motionSensor {
-	return &motionSensor{
+func New(device system.Device) *contactSensor {
+	return &contactSensor{
 		Device: system.Device{
 			Id:   device.Id,
 			Name: device.Name,
@@ -26,35 +26,36 @@ func New(device system.Device) *motionSensor {
 	}
 }
 
-func (s *motionSensor) OnDeviceAnnounced() {
+func (s *contactSensor) OnDeviceAnnounced() {
 
 }
 
-func (s *motionSensor) UpdateState(state system.State, armingMode system.ArmingMode, alarmType system.AlarmType) {
+func (s *contactSensor) UpdateState(state system.State, armingMode system.ArmingMode, alarmType system.AlarmType) {
+
 }
 
-func (s *motionSensor) Setup(connector *connector.Connector, systemControl system.Controller) {
+func (s *contactSensor) Setup(connector *connector.Connector, systemControl system.Controller) {
 	s.systemControl = systemControl
 	s.connector = connector
 	s.connector.Subscribe(s.readTopic, s.handleMessage)
 	system.DInfo(s.Device).Msg("Activated.")
 }
 
-func (s *motionSensor) Teardown() {
+func (s *contactSensor) Teardown() {
 	s.systemControl = nil
 	s.connector.Unsubscribe(s.readTopic)
 	s.connector = nil
 	system.DInfo(s.Device).Msg("Deactivated.")
 }
 
-func (s *motionSensor) handleMessage(msg mqtt.Message) {
+func (s *contactSensor) handleMessage(msg mqtt.Message) {
 	var payload statusPayload
 	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
 		log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse payload")
 		return
 	}
 
-	log.Debug().RawJSON("payload", msg.Payload()).Msg("Got data")
+	log.Debug().Str("payload", string(msg.Payload())).Msg("Got data")
 
 	if payload.Battery > 0 {
 		s.systemControl.ReportBatteryLevel(float32(payload.Battery)/float32(100), s.Device)
@@ -68,7 +69,7 @@ func (s *motionSensor) handleMessage(msg mqtt.Message) {
 		s.systemControl.Alarm(system.TamperAlarm, s.Device)
 	}
 
-	if payload.Occupancy {
+	if !payload.Contact {
 		s.systemControl.Alarm(system.BurglarAlarm, s.Device)
 	}
 }

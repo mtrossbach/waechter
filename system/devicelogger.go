@@ -19,5 +19,5 @@ func DError(device Device) *zerolog.Event {
 }
 
 func appendDeviceInfo(device Device, event *zerolog.Event) *zerolog.Event {
-	return event.Str("device", fmt.Sprintf("[id=%v;name=%v;type=%v;sub=%v]", device.GetId(), device.GetDisplayName(), device.GetType(), device.GetSubsystem()))
+	return event.Str("device", fmt.Sprintf("[%v;%v;%v]", device.Id, device.Name, device.Type))
 }

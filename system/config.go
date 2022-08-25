@@ -20,6 +20,6 @@ func init() {
 	cfg.SetDefault(cTamperAlarm, true)
 	cfg.SetDefault(cMaxWrongPinCount, 3)
 	cfg.SetDefault(cBatteryThreshold, 0.1)
-	cfg.SetDefault(cLinkQualityThreshold, 0.1)
+	cfg.SetDefault(cLinkQualityThreshold, 0.05)
 	cfg.SetDefault(cDisarmPins, []string{})
 }
