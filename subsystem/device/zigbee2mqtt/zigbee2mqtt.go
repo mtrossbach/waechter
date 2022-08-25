@@ -2,7 +2,7 @@ package zigbee2mqtt
 
 import (
 	"encoding/json"
-	"github.com/mtrossbach/waechter/internal/cfg"
+	"github.com/mtrossbach/waechter/internal/log"
 	"github.com/mtrossbach/waechter/internal/wslice"
 
 	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
@@ -11,20 +11,17 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mtrossbach/waechter/system"
-	"github.com/rs/zerolog"
 )
 
 type zigbee2mqtt struct {
 	deviceManager system.DeviceSystem
 	connector     *connector.Connector
-	log           zerolog.Logger
 }
 
 func New() *zigbee2mqtt {
 
 	return &zigbee2mqtt{
 		connector: connector.New(),
-		log:       cfg.Logger("Zigbee2Mqtt"),
 	}
 }
 
@@ -36,7 +33,7 @@ func (z2ms *zigbee2mqtt) Start(deviceManager system.DeviceSystem) {
 	z2ms.deviceManager = deviceManager
 	z2ms.connector.Connect()
 	z2ms.connector.Subscribe("bridge/devices", z2ms.handleNewDeviceList)
-	z2ms.connector.Subscribe("bridge/events", z2ms.handleDeviceEvent)
+	z2ms.connector.Subscribe("bridge/event", z2ms.handleDeviceEvent)
 }
 
 func (z2ms *zigbee2mqtt) Stop() {
@@ -46,7 +43,7 @@ func (z2ms *zigbee2mqtt) Stop() {
 func (z2ms *zigbee2mqtt) handleDeviceEvent(msg mqtt.Message) {
 	var deviceEvent model2.DeviceEvent
 	if err := json.Unmarshal(msg.Payload(), &deviceEvent); err != nil {
-		z2ms.log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse zdevice event!")
+		log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse zdevice event!")
 		return
 	}
 
@@ -62,7 +59,7 @@ func (z2ms *zigbee2mqtt) handleDeviceEvent(msg mqtt.Message) {
 func (z2ms *zigbee2mqtt) handleNewDeviceList(msg mqtt.Message) {
 	var newDevices []model2.Z2MDeviceInfo
 	if err := json.Unmarshal(msg.Payload(), &newDevices); err != nil {
-		z2ms.log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse devices payload!")
+		log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse devices payload!")
 		return
 	}
 
@@ -80,8 +77,8 @@ func (z2ms *zigbee2mqtt) handleNewDeviceList(msg mqtt.Message) {
 	deviceIdsToRemove := wslice.StringsMissingInList(relevantDeviceIds, oldDeviceIds)
 	deviceIdsToAdd := wslice.StringsMissingInList(oldDeviceIds, relevantDeviceIds)
 
-	z2ms.log.Debug().Strs("new", relevantDeviceIds).Strs("old", oldDeviceIds).Msg("Received new device list")
-	z2ms.log.Debug().Strs("add", deviceIdsToAdd).Strs("remove", deviceIdsToRemove).Msg("Merging device list")
+	log.Debug().Strs("new", relevantDeviceIds).Strs("old", oldDeviceIds).Msg("Received new device list")
+	log.Debug().Strs("add", deviceIdsToAdd).Strs("remove", deviceIdsToRemove).Msg("Merging device list")
 
 	for _, removeId := range deviceIdsToRemove {
 		z2ms.deviceManager.RemoveDeviceById(removeId)
@@ -92,7 +89,7 @@ func (z2ms *zigbee2mqtt) handleNewDeviceList(msg mqtt.Message) {
 		if dev != nil {
 			z2ms.deviceManager.AddDevice(dev)
 		} else {
-			z2ms.log.Warn().Str("id", addId).Interface("zdevice", relevantDevices[addId]).Msg("Could not find driver for device. Device will not be added to the system.")
+			log.Error().Str("id", addId).Interface("zdevice", relevantDevices[addId]).Msg("Could not find driver for device. Device will not be added to the system.")
 		}
 	}
 }

@@ -1,3 +1,3 @@
 package model
 
-const SubsystemName string = "Zigbee2Mqtt"
+const SubsystemName string = "z2m"

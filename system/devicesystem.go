@@ -1,12 +1,10 @@
 package system
 
 import (
-	"github.com/mtrossbach/waechter/internal/cfg"
-	"github.com/rs/zerolog"
+	"github.com/mtrossbach/waechter/internal/log"
 )
 
 type deviceSystem struct {
-	log        zerolog.Logger
 	subsystems []DeviceSubsystem
 	devices    map[string]Device
 	controller Controller
@@ -14,7 +12,6 @@ type deviceSystem struct {
 
 func newDeviceSystem(controller Controller) *deviceSystem {
 	return &deviceSystem{
-		log:        cfg.Logger("DeviceSystem"),
 		subsystems: []DeviceSubsystem{},
 		devices:    make(map[string]Device),
 		controller: controller,
@@ -23,7 +20,7 @@ func newDeviceSystem(controller Controller) *deviceSystem {
 
 func (ds *deviceSystem) RegisterSubsystem(subsystem DeviceSubsystem) {
 	ds.subsystems = append(ds.subsystems, subsystem)
-	ds.log.Info().Str("name", subsystem.GetName()).Msg("Registered new device subsystem")
+	log.Info().Str("name", subsystem.GetName()).Msg("Registered new device subsystem")
 	subsystem.Start(ds)
 }
 
@@ -31,7 +28,7 @@ func (ds *deviceSystem) AddDevice(dev Device) {
 	ds.devices[dev.GetId()] = dev
 	ds.UpdateSystemStateOnDevice(dev)
 	dev.Setup(ds.controller)
-	DevLog(dev, ds.log.Info()).Msg("Added device")
+	DInfo(dev).Msg("Added device")
 }
 
 func (ds *deviceSystem) RemoveDeviceById(id string) {

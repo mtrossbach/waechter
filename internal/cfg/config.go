@@ -5,7 +5,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
@@ -19,13 +18,6 @@ func Init() {
 	if err != nil {
 		fmt.Errorf("%w", err)
 	}
-	updateLogger()
-	viper.OnConfigChange(func(e fsnotify.Event) {
-		fmt.Println("Config file changed:", e.Name)
-		updateLogger()
-		Print()
-	})
-	viper.WatchConfig()
 }
 
 func GetBool(key string) bool {

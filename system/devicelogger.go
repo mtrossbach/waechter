@@ -1,7 +1,23 @@
 package system
 
-import "github.com/rs/zerolog"
+import (
+	"fmt"
+	"github.com/mtrossbach/waechter/internal/log"
+	"github.com/rs/zerolog"
+)
 
-func DevLog(device Device, e *zerolog.Event) *zerolog.Event {
-	return e.Str("id", device.GetId()).Str("displayName", device.GetDisplayName()).Str("type", string(device.GetType())).Str("device", device.GetSubsystem())
+func DInfo(device Device) *zerolog.Event {
+	return appendDeviceInfo(device, log.Info())
+}
+
+func DDebug(device Device) *zerolog.Event {
+	return appendDeviceInfo(device, log.Debug())
+}
+
+func DError(device Device) *zerolog.Event {
+	return appendDeviceInfo(device, log.Error())
+}
+
+func appendDeviceInfo(device Device, event *zerolog.Event) *zerolog.Event {
+	return event.Str("device", fmt.Sprintf("[id=%v;name=%v;type=%v;sub=%v]", device.GetId(), device.GetDisplayName(), device.GetType(), device.GetSubsystem()))
 }

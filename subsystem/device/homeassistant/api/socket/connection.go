@@ -2,9 +2,8 @@ package socket
 
 import (
 	"encoding/json"
-	"github.com/mtrossbach/waechter/internal/cfg"
+	"github.com/mtrossbach/waechter/internal/log"
 	"github.com/mtrossbach/waechter/subsystem/device/homeassistant/msgs"
-	"github.com/rs/zerolog"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -17,7 +16,6 @@ type subscription struct {
 
 type Connection struct {
 	socket        *Socket
-	log           zerolog.Logger
 	commands      sync.Map
 	subscriptions sync.Map
 	seq           uint64
@@ -27,7 +25,6 @@ type Connection struct {
 func NewConnection() *Connection {
 	return &Connection{
 		socket:        NewSocket(),
-		log:           cfg.Logger("HAConnection"),
 		commands:      sync.Map{},
 		subscriptions: sync.Map{},
 		seq:           0,
@@ -72,7 +69,7 @@ func (c *Connection) readPump(url string, token string, ch chan []byte) {
 		var result msgs.BaseResult
 		err := json.Unmarshal(data, &result)
 		if err != nil {
-			c.log.Error().Err(err).Msg("Could not parse json")
+			log.Error().Err(err).Msg("Could not parse json")
 			continue
 		}
 
@@ -83,9 +80,9 @@ func (c *Connection) readPump(url string, token string, ch chan []byte) {
 				AccessToken: token,
 			})
 		case msgs.AuthInvalid:
-			c.log.Error().Msg("Authentication is invalid")
+			log.Error().Msg("Authentication is invalid")
 		case msgs.AuthOk:
-			c.log.Info().Msg("Authentication successful")
+			log.Info().Msg("Authentication successful")
 			go c.writerPump()
 		default:
 			dataResult := Data{
@@ -114,10 +111,10 @@ func (c *Connection) readPump(url string, token string, ch chan []byte) {
 				continue
 			}
 
-			c.log.Debug().Uint64("id", result.Id).Msg("No handler registered for message.")
+			log.Debug().Uint64("id", result.Id).Msg("No handler registered for message.")
 		}
 	}
-	c.log.Info().Str("url", url).Msg("Connection closed. Reconnecting in 10 seconds...")
+	log.Info().Str("url", url).Msg("Connection closed. Reconnecting in 10 seconds...")
 	time.AfterFunc(10*time.Second, func() {
 		c.Connect(url, token)
 	})
@@ -157,7 +154,12 @@ func (c *Connection) Subscribe(payload SetId, result interface{}) (chan []byte, 
 }
 
 func (c *Connection) Unsubscribe(id uint64) {
-	c.subscriptions.Delete(id)
+	ch, ok := c.subscriptions.Load(id)
+	if ok {
+		sub := ch.(subscription)
+		close(sub.channel)
+		c.subscriptions.Delete(id)
+	}
 }
 
 func (c *Connection) Command(payload SetId, result interface{}) error {
