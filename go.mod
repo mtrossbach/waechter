@@ -2,10 +2,7 @@ module github.com/mtrossbach/waechter
 
 go 1.19
 
-require (
-	github.com/eclipse/paho.mqtt.golang v1.4.1
-	github.com/google/uuid v1.1.2
-)
+require github.com/eclipse/paho.mqtt.golang v1.4.1
 
 require (
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
