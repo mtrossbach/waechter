@@ -1,6 +1,6 @@
 package wslice
 
-func ContainsAll(s []string, e []string) bool {
+func ContainsAll[T comparable](s []T, e []T) bool {
 	for _, ee := range e {
 		if !Contains(s, ee) {
 			return false
@@ -9,34 +9,11 @@ func ContainsAll(s []string, e []string) bool {
 	return true
 }
 
-func Contains(s []string, e string) bool {
+func Contains[T comparable](s []T, e T) bool {
 	for _, a := range s {
 		if a == e {
 			return true
 		}
 	}
 	return false
-}
-
-func StringsMissingInList(baseList []string, searchList []string) []string {
-	if len(baseList) == 0 {
-		return searchList
-	}
-	if len(searchList) == 0 {
-		return []string{}
-	}
-	var result []string
-	for _, s := range searchList {
-		found := false
-		for _, b := range baseList {
-			if b == s {
-				found = true
-				break
-			}
-		}
-		if !found {
-			result = append(result, s)
-		}
-	}
-	return result
 }

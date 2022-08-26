@@ -2,8 +2,8 @@ package socket
 
 import (
 	"encoding/json"
+	msgs2 "github.com/mtrossbach/waechter/device/homeassistant/msgs"
 	"github.com/mtrossbach/waechter/internal/log"
-	"github.com/mtrossbach/waechter/subsystem/device/homeassistant/msgs"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -66,7 +66,7 @@ func (c *Connection) Connect(url string, token string) error {
 
 func (c *Connection) readPump(url string, token string, ch chan []byte) {
 	for data := range ch {
-		var result msgs.BaseResult
+		var result msgs2.BaseResult
 		err := json.Unmarshal(data, &result)
 		if err != nil {
 			log.Error().Err(err).Msg("Could not parse json")
@@ -74,14 +74,14 @@ func (c *Connection) readPump(url string, token string, ch chan []byte) {
 		}
 
 		switch result.Type {
-		case msgs.AuthRequired:
-			c.socket.SendJson(msgs.AuthRequest{
-				Type:        msgs.Auth,
+		case msgs2.AuthRequired:
+			c.socket.SendJson(msgs2.AuthRequest{
+				Type:        msgs2.Auth,
 				AccessToken: token,
 			})
-		case msgs.AuthInvalid:
+		case msgs2.AuthInvalid:
 			log.Error().Msg("Authentication is invalid")
-		case msgs.AuthOk:
+		case msgs2.AuthOk:
 			log.Info().Msg("Authentication successful")
 			go c.writerPump()
 		default:

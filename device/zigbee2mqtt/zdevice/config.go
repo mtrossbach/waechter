@@ -1,4 +1,4 @@
-package siren
+package zdevice
 
 import (
 	"github.com/mtrossbach/waechter/internal/cfg"
@@ -11,5 +11,5 @@ const (
 
 func init() {
 	cfg.SetDefault(cEnabled, true)
-	cfg.SetDefault(cLevel, "high")
+	cfg.SetDefault(cLevel, string(high))
 }

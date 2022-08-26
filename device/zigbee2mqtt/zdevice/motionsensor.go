@@ -1,21 +1,22 @@
-package motionsensor
+package zdevice
 
 import (
 	"encoding/json"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/mtrossbach/waechter/device"
+	"github.com/mtrossbach/waechter/device/zigbee2mqtt/connector"
 	"github.com/mtrossbach/waechter/internal/log"
-	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
 	"github.com/mtrossbach/waechter/system"
 )
 
 type motionSensor struct {
 	system.Device
 	connector     *connector.Connector
-	systemControl system.Controller
+	systemControl device.SystemController
 	readTopic     string
 }
 
-func New(device system.Device) *motionSensor {
+func NewMotionSensor(device system.Device) *motionSensor {
 	return &motionSensor{
 		Device: system.Device{
 			Id:   device.Id,
@@ -33,7 +34,7 @@ func (s *motionSensor) OnDeviceAnnounced() {
 func (s *motionSensor) UpdateState(state system.State, armingMode system.ArmingMode, alarmType system.AlarmType) {
 }
 
-func (s *motionSensor) Setup(connector *connector.Connector, systemControl system.Controller) {
+func (s *motionSensor) Setup(connector *connector.Connector, systemControl device.SystemController) {
 	s.systemControl = systemControl
 	s.connector = connector
 	s.connector.Subscribe(s.readTopic, s.handleMessage)
@@ -48,7 +49,7 @@ func (s *motionSensor) Teardown() {
 }
 
 func (s *motionSensor) handleMessage(msg mqtt.Message) {
-	var payload statusPayload
+	var payload motionStatus
 	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
 		log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse payload")
 		return
@@ -60,8 +61,8 @@ func (s *motionSensor) handleMessage(msg mqtt.Message) {
 		s.systemControl.ReportBatteryLevel(float32(payload.Battery)/float32(100), s.Device)
 	}
 
-	if payload.Linkquality > 0 {
-		s.systemControl.ReportLinkQuality(float32(payload.Linkquality)/float32(255), s.Device)
+	if payload.LinkQuality > 0 {
+		s.systemControl.ReportLinkQuality(float32(payload.LinkQuality)/float32(255), s.Device)
 	}
 
 	if payload.Tamper {

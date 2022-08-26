@@ -3,17 +3,17 @@ package zigbee2mqtt
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mtrossbach/waechter/device"
+	"github.com/mtrossbach/waechter/device/zigbee2mqtt/connector"
 	"github.com/mtrossbach/waechter/internal/log"
 	"sync"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
-	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/model"
 	"github.com/mtrossbach/waechter/system"
 )
 
 type zigbee2mqtt struct {
-	systemController system.Controller
+	systemController device.SystemController
 	connector        *connector.Connector
 	devices          sync.Map
 }
@@ -24,7 +24,7 @@ func New() *zigbee2mqtt {
 	}
 }
 
-func (z2ms *zigbee2mqtt) Start(systemController system.Controller) {
+func (z2ms *zigbee2mqtt) Start(systemController device.SystemController) {
 	z2ms.systemController = systemController
 	systemController.SubscribeStateUpdate(z2ms, z2ms.updateState)
 	z2ms.connector.Connect()
@@ -44,7 +44,7 @@ func (z2ms *zigbee2mqtt) Stop() {
 }
 
 func (z2ms *zigbee2mqtt) handleDeviceEvent(msg mqtt.Message) {
-	var deviceEvent model.DeviceEvent
+	var deviceEvent DeviceEvent
 	if err := json.Unmarshal(msg.Payload(), &deviceEvent); err != nil {
 		log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse zdevice event!")
 		return
@@ -62,13 +62,13 @@ func (z2ms *zigbee2mqtt) handleDeviceEvent(msg mqtt.Message) {
 }
 
 func (z2ms *zigbee2mqtt) handleNewDeviceList(msg mqtt.Message) {
-	var newDevices []model.Z2MDeviceInfo
+	var newDevices []Z2MDeviceInfo
 	if err := json.Unmarshal(msg.Payload(), &newDevices); err != nil {
 		log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse devices payload!")
 		return
 	}
 
-	relevantDevices := make(map[string]model.Z2MDeviceInfo)
+	relevantDevices := make(map[string]Z2MDeviceInfo)
 	for _, device := range newDevices {
 		if device.Type == "EndDevice" && device.Supported {
 			relevantDevices[device.IeeeAddress] = device

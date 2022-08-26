@@ -1,21 +1,22 @@
-package contactsensor
+package zdevice
 
 import (
 	"encoding/json"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/mtrossbach/waechter/device"
+	"github.com/mtrossbach/waechter/device/zigbee2mqtt/connector"
 	"github.com/mtrossbach/waechter/internal/log"
-	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
 	"github.com/mtrossbach/waechter/system"
 )
 
 type contactSensor struct {
 	system.Device
 	connector     *connector.Connector
-	systemControl system.Controller
+	systemControl device.SystemController
 	readTopic     string
 }
 
-func New(device system.Device) *contactSensor {
+func NewContactSensor(device system.Device) *contactSensor {
 	return &contactSensor{
 		Device: system.Device{
 			Id:   device.Id,
@@ -34,7 +35,7 @@ func (s *contactSensor) UpdateState(state system.State, armingMode system.Arming
 
 }
 
-func (s *contactSensor) Setup(connector *connector.Connector, systemControl system.Controller) {
+func (s *contactSensor) Setup(connector *connector.Connector, systemControl device.SystemController) {
 	s.systemControl = systemControl
 	s.connector = connector
 	s.connector.Subscribe(s.readTopic, s.handleMessage)
@@ -49,7 +50,7 @@ func (s *contactSensor) Teardown() {
 }
 
 func (s *contactSensor) handleMessage(msg mqtt.Message) {
-	var payload statusPayload
+	var payload contactStatus
 	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
 		log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse payload")
 		return
@@ -61,8 +62,8 @@ func (s *contactSensor) handleMessage(msg mqtt.Message) {
 		s.systemControl.ReportBatteryLevel(float32(payload.Battery)/float32(100), s.Device)
 	}
 
-	if payload.Linkquality > 0 {
-		s.systemControl.ReportLinkQuality(float32(payload.Linkquality)/float32(255), s.Device)
+	if payload.LinkQuality > 0 {
+		s.systemControl.ReportLinkQuality(float32(payload.LinkQuality)/float32(255), s.Device)
 	}
 
 	if payload.Tamper {

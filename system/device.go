@@ -6,6 +6,22 @@ import (
 	"github.com/rs/zerolog"
 )
 
+type DeviceType string
+
+const (
+	Keypad        DeviceType = "keypad"
+	MotionSensor  DeviceType = "motion"
+	ContactSensor DeviceType = "contact"
+	Siren         DeviceType = "siren"
+	SmokeSensor   DeviceType = "smoke"
+)
+
+type Device struct {
+	Id   string     `json:"id"`
+	Name string     `json:"name"`
+	Type DeviceType `json:"type"`
+}
+
 func DInfo(device Device) *zerolog.Event {
 	return appendDeviceInfo(device, log.Info())
 }

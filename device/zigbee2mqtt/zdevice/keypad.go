@@ -1,23 +1,24 @@
-package keypad
+package zdevice
 
 import (
 	"encoding/json"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/mtrossbach/waechter/device"
+	"github.com/mtrossbach/waechter/device/zigbee2mqtt/connector"
 	"github.com/mtrossbach/waechter/internal/log"
-	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
 	"github.com/mtrossbach/waechter/system"
 )
 
 type keypad struct {
 	system.Device
 	connector     *connector.Connector
-	systemControl system.Controller
+	systemControl device.SystemController
 	writeTopic    string
 	readTopic     string
 }
 
-func New(device system.Device) *keypad {
+func NewKeypad(device system.Device) *keypad {
 	return &keypad{
 		Device: system.Device{
 			Id:   device.Id,
@@ -33,7 +34,7 @@ func (s *keypad) UpdateState(state system.State, armingMode system.ArmingMode, a
 	s.sendState()
 }
 
-func (s *keypad) Setup(connector *connector.Connector, systemControl system.Controller) {
+func (s *keypad) Setup(connector *connector.Connector, systemControl device.SystemController) {
 	s.systemControl = systemControl
 	s.connector = connector
 	s.connector.Subscribe(s.readTopic, s.handleMessage)
@@ -51,7 +52,7 @@ func (s *keypad) Teardown() {
 }
 
 func (s *keypad) handleMessage(msg mqtt.Message) {
-	var payload statusPayload
+	var payload keypadStatus
 	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
 		log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse payload")
 		return
@@ -64,8 +65,8 @@ func (s *keypad) handleMessage(msg mqtt.Message) {
 		s.systemControl.ReportBatteryLevel(level, s.Device)
 	}
 
-	if payload.Linkquality > 0 {
-		s.systemControl.ReportLinkQuality(float32(payload.Linkquality)/float32(255), s.Device)
+	if payload.LinkQuality > 0 {
+		s.systemControl.ReportLinkQuality(float32(payload.LinkQuality)/float32(255), s.Device)
 	}
 
 	if payload.Tamper {
@@ -88,7 +89,7 @@ func (s *keypad) handleMessage(msg mqtt.Message) {
 }
 
 func (s *keypad) _sendState(state string, transactionId *int) {
-	payload := newStatePayload(state, transactionId)
+	payload := newKeypadSetState(state, transactionId)
 	s.connector.Publish(s.writeTopic, payload)
 }
 
@@ -96,6 +97,6 @@ func (s *keypad) sendState() {
 	if s.systemControl == nil {
 		return
 	}
-	s._sendState(systemStateToDeviceState(s.systemControl.GetState(), s.systemControl.GetArmingMode(), s.systemControl.GetAlarmType()), nil)
+	s._sendState(sysStateToKeypadState(s.systemControl.GetState(), s.systemControl.GetArmingMode(), s.systemControl.GetAlarmType()), nil)
 
 }

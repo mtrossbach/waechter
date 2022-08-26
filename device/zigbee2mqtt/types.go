@@ -1,4 +1,17 @@
-package model
+package zigbee2mqtt
+
+import (
+	"github.com/mtrossbach/waechter/device"
+	"github.com/mtrossbach/waechter/device/zigbee2mqtt/connector"
+	"github.com/mtrossbach/waechter/system"
+)
+
+type ZDevice interface {
+	OnDeviceAnnounced()
+	UpdateState(state system.State, armingMode system.ArmingMode, alarmType system.AlarmType)
+	Setup(connector *connector.Connector, systemControl device.SystemController)
+	Teardown()
+}
 
 type Z2MDeviceInfo struct {
 	IeeeAddress        string     `json:"ieee_address"`
@@ -18,7 +31,7 @@ type Clusters struct {
 	Output []interface{} `json:"output"`
 }
 type Definition struct {
-	Model       string    `json:"model"`
+	Model       string    `json:"types"`
 	Vendor      string    `json:"vendor"`
 	Description string    `json:"description"`
 	Options     []Options `json:"options"`
