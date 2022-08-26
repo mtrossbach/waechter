@@ -2,12 +2,13 @@ package homeassistant
 
 import (
 	"fmt"
-	"github.com/gorilla/websocket"
+	device2 "github.com/mtrossbach/waechter/device"
+	"github.com/mtrossbach/waechter/device/homeassistant/api"
+	"github.com/mtrossbach/waechter/device/homeassistant/device"
+	"github.com/mtrossbach/waechter/device/homeassistant/model"
 	"github.com/mtrossbach/waechter/internal/cfg"
-	"github.com/mtrossbach/waechter/subsystem/device/homeassistant/api"
-	"github.com/mtrossbach/waechter/subsystem/device/homeassistant/device"
-	"github.com/mtrossbach/waechter/subsystem/device/homeassistant/model"
 	"github.com/mtrossbach/waechter/system"
+	"golang.org/x/net/websocket"
 	"sync"
 )
 
@@ -29,7 +30,7 @@ func (ha *homeassistant) GetName() string {
 	return model.SubsystemName
 }
 
-func (ha *homeassistant) Start(systemController system.Controller) {
+func (ha *homeassistant) Start(systemController device2.SystemController) {
 	ha.api.Connect()
 
 	st, _ := ha.api.GetStates()

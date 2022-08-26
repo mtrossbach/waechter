@@ -2,8 +2,9 @@ package device
 
 import (
 	"encoding/json"
-	"github.com/mtrossbach/waechter/subsystem/device/homeassistant/api"
-	"github.com/mtrossbach/waechter/subsystem/device/homeassistant/msgs"
+	"github.com/mtrossbach/waechter/device"
+	"github.com/mtrossbach/waechter/device/homeassistant/api"
+	"github.com/mtrossbach/waechter/device/homeassistant/msgs"
 	"github.com/mtrossbach/waechter/system"
 	"log"
 )
@@ -12,7 +13,7 @@ type motionSensor struct {
 	system.Device
 	entityId      string
 	api           *api.Api
-	systemControl system.Controller
+	systemControl device.SystemController
 	subId         uint64
 }
 
@@ -30,7 +31,7 @@ func NewMotionSensor(device system.Device, api *api.Api, entityId string) *motio
 	}
 }
 
-func (s *motionSensor) Setup(controller system.Controller) {
+func (s *motionSensor) Setup(controller device.SystemController) {
 	s.systemControl = controller
 	go s.subscribe()
 }

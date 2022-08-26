@@ -2,13 +2,11 @@ module github.com/mtrossbach/waechter
 
 go 1.19
 
-require (
-	github.com/eclipse/paho.mqtt.golang v1.4.1
-	github.com/google/uuid v1.1.2
-)
+require github.com/eclipse/paho.mqtt.golang v1.4.1
 
 require (
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
@@ -29,7 +27,6 @@ require (
 )
 
 require (
-	github.com/gorilla/websocket v1.4.2
 	github.com/rs/zerolog v1.27.0
 	github.com/spf13/viper v1.12.0
 	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2

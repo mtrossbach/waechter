@@ -1,25 +1,25 @@
-package siren
+package zdevice
 
 import (
 	"encoding/json"
 	"fmt"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/mtrossbach/waechter/device"
+	"github.com/mtrossbach/waechter/device/zigbee2mqtt/connector"
 	"github.com/mtrossbach/waechter/internal/cfg"
 	"github.com/mtrossbach/waechter/internal/log"
-
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mtrossbach/waechter/subsystem/device/zigbee2mqtt/connector"
 	"github.com/mtrossbach/waechter/system"
 )
 
 type siren struct {
 	system.Device
 	connector     *connector.Connector
-	systemControl system.Controller
+	systemControl device.SystemController
 	writeTopic    string
 	readTopic     string
 }
 
-func New(device system.Device) *siren {
+func NewSiren(device system.Device) *siren {
 	return &siren{
 		Device: system.Device{
 			Id:   device.Id,
@@ -35,7 +35,7 @@ func (s *siren) UpdateState(state system.State, armingMode system.ArmingMode, al
 	s.sendState()
 }
 
-func (s *siren) Setup(connector *connector.Connector, systemControl system.Controller) {
+func (s *siren) Setup(connector *connector.Connector, systemControl device.SystemController) {
 	s.systemControl = systemControl
 	s.connector = connector
 	s.connector.Subscribe(s.readTopic, s.handleMessage)
@@ -47,11 +47,11 @@ func (s *siren) OnDeviceAnnounced() {
 }
 
 func (s *siren) sendState() {
-	var payload warningPayload
+	var payload sirenWarning
 	if s.systemControl.GetAlarmType() != system.NoAlarm && cfg.GetBool(cEnabled) {
-		payload = newWarningPayload(s.systemControl.GetAlarmType())
+		payload = newSirenWarningPayload(s.systemControl.GetAlarmType())
 	} else {
-		payload = newWarningPayload(system.NoAlarm)
+		payload = newSirenWarningPayload(system.NoAlarm)
 	}
 	s.connector.Publish(s.writeTopic, payload)
 }
@@ -64,7 +64,7 @@ func (s *siren) Teardown() {
 }
 
 func (s *siren) handleMessage(msg mqtt.Message) {
-	var payload statusPayload
+	var payload sirenStatus
 	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
 		log.Error().Str("payload", string(msg.Payload())).Msg("Could not parse payload")
 		return
@@ -76,8 +76,8 @@ func (s *siren) handleMessage(msg mqtt.Message) {
 		s.systemControl.ReportBatteryLevel(float32(payload.Battery)/float32(100), s.Device)
 	}
 
-	if payload.Linkquality > 0 {
-		s.systemControl.ReportLinkQuality(float32(payload.Linkquality)/float32(255), s.Device)
+	if payload.LinkQuality > 0 {
+		s.systemControl.ReportLinkQuality(float32(payload.LinkQuality)/float32(255), s.Device)
 	}
 
 	if payload.Tamper {
