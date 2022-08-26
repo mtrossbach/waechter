@@ -2,13 +2,13 @@ package homeassistant
 
 import (
 	"fmt"
-	"github.com/gorilla/websocket"
 	device2 "github.com/mtrossbach/waechter/device"
 	"github.com/mtrossbach/waechter/device/homeassistant/api"
 	"github.com/mtrossbach/waechter/device/homeassistant/device"
 	"github.com/mtrossbach/waechter/device/homeassistant/model"
 	"github.com/mtrossbach/waechter/internal/cfg"
 	"github.com/mtrossbach/waechter/system"
+	"golang.org/x/net/websocket"
 	"sync"
 )
 
