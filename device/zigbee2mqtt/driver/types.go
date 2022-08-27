@@ -1,9 +1,11 @@
-package zdevice
+package driver
 
 import (
 	"github.com/mtrossbach/waechter/internal/cfg"
 	"github.com/mtrossbach/waechter/system"
 )
+
+type Sender func(payload any)
 
 type mode string
 type level string

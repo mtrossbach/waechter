@@ -1,4 +1,4 @@
-package socket
+package connector
 
 type Data struct {
 	Id  uint64

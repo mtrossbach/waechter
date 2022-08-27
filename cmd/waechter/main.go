@@ -20,8 +20,8 @@ func main() {
 	log.Info().Msg("Starting up...")
 
 	sys := system.NewWaechterSystem()
-	zigbee2mqtt.New().Start(sys)
-	homeassistant.New().Start(sys)
+	go zigbee2mqtt.New().Start(sys)
+	go homeassistant.New().Start(sys)
 	sys.AddNotificationHandler(dummy.New().SendNotification)
 
 	log.Info().Msg("Started.")

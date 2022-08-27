@@ -7,6 +7,9 @@ import (
 	"time"
 )
 
+type StateUpdateFunc func(state State, armingMode ArmingMode, alarmType AlarmType)
+type NotificationFunc func(note Notification) bool
+
 type WaechterSystem struct {
 	state         State
 	armingMode    ArmingMode
@@ -73,11 +76,7 @@ func (ws *WaechterSystem) Disarm(enteredPin string, dev Device) bool {
 	}
 
 	if pinOk {
-		ws.wrongPinCount = 0
-		if ws.alarmType != NoAlarm {
-			ws.notifyNotification(recoveryNotification(dev))
-		}
-		ws.setState(DisarmedState, ws.armingMode, NoAlarm)
+		ws.ForceDisarm(dev)
 		return true
 	} else {
 		ws.wrongPinCount += 1
@@ -86,6 +85,14 @@ func (ws *WaechterSystem) Disarm(enteredPin string, dev Device) bool {
 		}
 		return false
 	}
+}
+
+func (ws *WaechterSystem) ForceDisarm(dev Device) {
+	ws.wrongPinCount = 0
+	if ws.alarmType != NoAlarm {
+		ws.notifyNotification(recoveryNotification(dev))
+	}
+	ws.setState(DisarmedState, ws.armingMode, NoAlarm)
 }
 
 func (ws *WaechterSystem) Alarm(aType AlarmType, dev Device) bool {
@@ -116,8 +123,6 @@ func (ws *WaechterSystem) ReportBatteryLevel(level float32, dev Device) {
 	if level < cfg.GetFloat32(cBatteryThreshold) {
 		DInfo(dev).Float32("battery", level).Msg("Battery is too low! Notify!")
 		ws.notifyNotification(lowBatteryNotification(dev, level))
-	} else {
-		DDebug(dev).Float32("battery", level).Msg("Got battery info")
 	}
 }
 
@@ -127,9 +132,7 @@ func (ws *WaechterSystem) ReportLinkQuality(link float32, dev Device) {
 		ws.Alarm(TamperAlarm, dev)
 	} else if link < cfg.GetFloat32(cLinkQualityThreshold) {
 		DInfo(dev).Float32("link", link).Msg("Link quality is too low! Notify!")
-		ws.notifyNotification(lowBatteryNotification(dev, link))
-	} else {
-		DDebug(dev).Float32("link", link).Msg("Got link quality info")
+		ws.notifyNotification(lowLinkQualityNotification(dev, link))
 	}
 }
 
@@ -149,7 +152,7 @@ func (ws *WaechterSystem) setState(state State, mode ArmingMode, alarmType Alarm
 	ws.state = state
 	ws.armingMode = mode
 	ws.alarmType = alarmType
-	log.TInfo(ws).Str("state", string(state)).Str("armingMode", string(mode)).Str("alarmType", string(alarmType)).Msg("System state updated")
+	log.Info().Str("state", string(state)).Str("armingMode", string(mode)).Str("alarmType", string(alarmType)).Msg("System state updated")
 	ws.notifyStateHandlers()
 }
 
