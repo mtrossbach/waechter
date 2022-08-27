@@ -44,6 +44,14 @@ func SetDefault(key string, value interface{}) {
 	viper.SetDefault(key, value)
 }
 
+func SetString(key string, value string) {
+	viper.Set(key, value)
+}
+
+func WriteConfig() {
+	viper.WriteConfig()
+}
+
 func Print() {
 	keys := viper.AllKeys()
 	sort.Strings(keys)

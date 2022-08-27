@@ -12,6 +12,10 @@ const (
 	cBatteryThreshold     = "general.batterythreshold"
 	cLinkQualityThreshold = "general.linkqualitythreshold"
 	cDisarmPins           = "disarmpins"
+
+	cSystemState      = "system.state"
+	cSystemArmingMode = "system.armingMode"
+	cSystemAlarmType  = "system.alarmType"
 )
 
 func init() {
