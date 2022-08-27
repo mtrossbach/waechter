@@ -25,6 +25,3 @@ const (
 	StayMode ArmingMode = "stay"
 	AwayMode ArmingMode = "away"
 )
-
-type StateUpdateFunc func(state State, armingMode ArmingMode, alarmType AlarmType)
-type NotificationFunc func(note Notification) bool

@@ -1,4 +1,4 @@
-package zdevice
+package driver
 
 import (
 	"github.com/mtrossbach/waechter/internal/cfg"
