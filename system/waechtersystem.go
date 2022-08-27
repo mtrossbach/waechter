@@ -21,13 +21,30 @@ type WaechterSystem struct {
 }
 
 func NewWaechterSystem() *WaechterSystem {
-	return &WaechterSystem{
-		state:                DisarmedState,
-		armingMode:           AwayMode,
-		alarmType:            NoAlarm,
+	system := &WaechterSystem{
 		wrongPinCount:        0,
 		stateUpdateHandlers:  sync.Map{},
 		notificationHandlers: []NotificationFunc{},
+	}
+	system.initState()
+	return system
+}
+
+func (ws *WaechterSystem) initState() {
+	cfgState := State(cfg.GetString(cSystemState))
+	cfgArmingMode := ArmingMode(cfg.GetString(cSystemArmingMode))
+	cfgAlarmType := AlarmType(cfg.GetString(cSystemAlarmType))
+
+	if isValidState(cfgState) && isValidArmingMode(cfgArmingMode) && isValidAlarmType(cfgAlarmType) {
+		if cfgState == EntryDelayState {
+			cfgState = ArmedState
+			cfgAlarmType = BurglarAlarm
+		} else if cfgState == ArmingState {
+			cfgState = ArmedState
+		}
+		ws.setState(cfgState, cfgArmingMode, cfgAlarmType)
+	} else {
+		ws.setState(DisarmedState, AwayMode, NoAlarm)
 	}
 }
 
@@ -107,6 +124,7 @@ func (ws *WaechterSystem) Alarm(aType AlarmType, dev Device) bool {
 		ws.setState(EntryDelayState, ws.armingMode, ws.alarmType)
 		time.AfterFunc(time.Duration(cfg.GetInt(cEntryDelay))*time.Second, func() {
 			if ws.state == EntryDelayState {
+				DInfo(dev).Str("alarmType", string(aType)).Msg("Alarm triggered -> entry delay")
 				ws.setState(ws.state, ws.armingMode, aType)
 				ws.notifyNotification(alarmNotification(aType, dev))
 			}
@@ -154,6 +172,10 @@ func (ws *WaechterSystem) setState(state State, mode ArmingMode, alarmType Alarm
 	ws.alarmType = alarmType
 	log.Info().Str("state", string(state)).Str("armingMode", string(mode)).Str("alarmType", string(alarmType)).Msg("System state updated")
 	ws.notifyStateHandlers()
+	cfg.SetString(cSystemState, string(state))
+	cfg.SetString(cSystemArmingMode, string(mode))
+	cfg.SetString(cSystemAlarmType, string(alarmType))
+	cfg.WriteConfig()
 }
 
 func (ws *WaechterSystem) notifyStateHandlers() {
