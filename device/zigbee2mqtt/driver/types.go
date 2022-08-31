@@ -32,7 +32,12 @@ type baseStatus struct {
 
 type sirenStatus struct {
 	baseStatus
-	Warning sirenWarning `json:"warning"`
+	Warning warningPayload `json:"warning"`
+}
+
+type smokeStatus struct {
+	baseStatus
+	Smoke bool `json:"smoke"`
 }
 
 type motionStatus struct {
@@ -61,7 +66,7 @@ type armMode struct {
 	Transaction *int   `json:"transaction,omitempty"`
 }
 
-type sirenWarning struct {
+type warningPayload struct {
 	Warning warningOptions `json:"warning"`
 }
 
@@ -74,7 +79,7 @@ type warningOptions struct {
 	Duration        int   `json:"duration"`
 }
 
-func newSirenWarningPayload(alarmType system.AlarmType) sirenWarning {
+func newWarningPayload(alarmType system.AlarmType) warningPayload {
 	mode := stop
 	switch alarmType {
 	case system.BurglarAlarm, system.TamperAlarm:
@@ -87,7 +92,7 @@ func newSirenWarningPayload(alarmType system.AlarmType) sirenWarning {
 		mode = stop
 	}
 
-	return sirenWarning{
+	return warningPayload{
 		Warning: warningOptions{
 			Mode:            mode,
 			Level:           level(cfg.GetString(cLevel)),

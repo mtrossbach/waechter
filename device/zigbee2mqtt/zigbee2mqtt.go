@@ -71,6 +71,8 @@ func (zm *zigbee2mqtt) updateStateForDevice(dev *system.Device) {
 			driver.SirenStateUpdater(zm.systemController, zm.sender(dev))
 		case system.Keypad:
 			driver.KeypadStateUpdater(zm.systemController, zm.sender(dev))
+		case system.SmokeSensor:
+			driver.SmokeStateUpdater(zm.systemController, zm.sender(dev))
 		}
 	}
 }
@@ -104,7 +106,7 @@ func (zm *zigbee2mqtt) setupDevice(dev system.Device) {
 	case system.ContactSensor:
 		zm.connector.Subscribe(dev.Name, driver.ContactSensorHandler(&dev, zm.systemController))
 	case system.SmokeSensor:
-		system.DInfo(dev).Msg("Zigbee Smoke Sensors are currently unsupported")
+		zm.connector.Subscribe(dev.Name, driver.SmokeSensorHandler(&dev, zm.systemController))
 	case system.Keypad:
 		zm.connector.Subscribe(dev.Name, driver.KeypadHandler(&dev, zm.systemController, zm.sender(&dev)))
 	case system.Siren:
