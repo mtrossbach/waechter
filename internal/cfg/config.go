@@ -12,6 +12,7 @@ func Init() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
+	viper.AddConfigPath("./config")
 	viper.AddConfigPath("$HOME/.waechter")
 	viper.AddConfigPath("/etc/waechter/")
 	err := viper.ReadInConfig()

@@ -17,5 +17,5 @@
 __debug_bin
 .vscode/launch.json
 .env
-config.yaml
+config/config.yaml
 .idea/*
