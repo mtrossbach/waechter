@@ -83,9 +83,9 @@ func (ha *homeassistant) setupDevice(dev system.Device, controller dd.SystemCont
 	}
 
 	if err != nil {
-		system.DError(dev).Err(err).Msg("Could not setup HomeAssistant device!")
+		system.DError(&dev).Err(err).Msg("Could not setup HomeAssistant device!")
 	} else {
-		system.DInfo(dev).Msg("Setup HomeAssistant device")
+		system.DInfo(&dev).Msg("Setup HomeAssistant device")
 	}
 	ha.devices.Store(dev, sId)
 }
@@ -95,7 +95,8 @@ func (ha *homeassistant) tearDownAllDevices(connectionLost bool) {
 		if !connectionLost {
 			ha.connector.UnsubscribeStateTrigger(value.(uint64))
 		}
-		system.DInfo(key.(system.Device)).Msg("Remove HomeAssistant device")
+		dev := key.(system.Device)
+		system.DInfo(&dev).Msg("Remove HomeAssistant device")
 		return true
 	})
 	ha.devices = sync.Map{}

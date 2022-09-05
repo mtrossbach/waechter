@@ -1,0 +1,30 @@
+[
+  {
+    "id": "whatsapp_low_battery",
+    "translation": "low battery"
+  },
+  {
+    "id": "whatsapp_low_link_quality",
+    "translation": "low radio signal quality"
+  },
+  {
+    "id": "alarm_none",
+    "translation": "alarm end"
+  },
+  {
+    "id": "alarm_burglar",
+    "translation": "burglar alarm"
+  },
+  {
+    "id": "alarm_panic",
+    "translation": "panic alarm"
+  },
+  {
+    "id": "alarm_fire",
+    "translation": "fire alarm"
+  },
+  {
+    "id": "alarm_tamper",
+    "translation": "tamper alarm"
+  }
+]

@@ -8,23 +8,22 @@ import (
 )
 
 type StateUpdateFunc func(state State, armingMode ArmingMode, alarmType AlarmType)
-type NotificationFunc func(note Notification) bool
 
 type WaechterSystem struct {
-	state         State
-	armingMode    ArmingMode
-	alarmType     AlarmType
-	wrongPinCount int
+	state               State
+	armingMode          ArmingMode
+	alarmType           AlarmType
+	wrongPinCount       int
+	notificationManager *notificationManager
 
-	stateUpdateHandlers  sync.Map
-	notificationHandlers []NotificationFunc
+	stateUpdateHandlers sync.Map
 }
 
 func NewWaechterSystem() *WaechterSystem {
 	system := &WaechterSystem{
-		wrongPinCount:        0,
-		stateUpdateHandlers:  sync.Map{},
-		notificationHandlers: []NotificationFunc{},
+		wrongPinCount:       0,
+		stateUpdateHandlers: sync.Map{},
+		notificationManager: newNotificationManager(cfg.GetString(cSystemName)),
 	}
 	system.initState()
 	return system
@@ -56,8 +55,8 @@ func (ws *WaechterSystem) UnsubscribeStateUpdate(id interface{}) {
 	ws.stateUpdateHandlers.Delete(id)
 }
 
-func (ws *WaechterSystem) AddNotificationHandler(fun NotificationFunc) {
-	ws.notificationHandlers = append(ws.notificationHandlers, fun)
+func (ws *WaechterSystem) AddNotificationAdapter(adapter NotificationAdapter) {
+	ws.notificationManager.AddAdapter(adapter)
 }
 
 func (ws *WaechterSystem) Arm(mode ArmingMode, dev Device) bool {
@@ -107,7 +106,7 @@ func (ws *WaechterSystem) Disarm(enteredPin string, dev Device) bool {
 func (ws *WaechterSystem) ForceDisarm(dev Device) {
 	ws.wrongPinCount = 0
 	if ws.alarmType != NoAlarm {
-		ws.notifyNotification(recoveryNotification(dev))
+		ws.notificationManager.notifyRecovery(&dev)
 	}
 	ws.setState(DisarmedState, ws.armingMode, NoAlarm)
 }
@@ -120,37 +119,37 @@ func (ws *WaechterSystem) Alarm(aType AlarmType, dev Device) bool {
 		return false
 	}
 
-	if ws.state == ArmedState && aType == BurglarAlarm {
+	if ws.state == ArmedState && aType == BurglarAlarm && ws.alarmType == NoAlarm {
 		ws.setState(EntryDelayState, ws.armingMode, ws.alarmType)
 		time.AfterFunc(time.Duration(cfg.GetInt(cEntryDelay))*time.Second, func() {
 			if ws.state == EntryDelayState {
-				DInfo(dev).Str("alarmType", string(aType)).Msg("Alarm triggered -> entry delay")
-				ws.setState(ws.state, ws.armingMode, aType)
-				ws.notifyNotification(alarmNotification(aType, dev))
+				DInfo(&dev).Str("alarmType", string(aType)).Msg("Alarm triggered -> entry delay")
+				ws.setState(ArmedState, ws.armingMode, aType)
+				ws.notificationManager.notifyAlarm(aType, &dev)
 			}
 		})
 		return true
 	} else {
 		ws.setState(ws.state, ws.armingMode, aType)
-		ws.notifyNotification(alarmNotification(aType, dev))
+		ws.notificationManager.notifyAlarm(aType, &dev)
 		return true
 	}
 }
 
 func (ws *WaechterSystem) ReportBatteryLevel(level float32, dev Device) {
 	if level < cfg.GetFloat32(cBatteryThreshold) {
-		DInfo(dev).Float32("battery", level).Msg("Battery is too low! Notify!")
-		ws.notifyNotification(lowBatteryNotification(dev, level))
+		DInfo(&dev).Float32("battery", level).Msg("Battery is too low! Notify!")
+		ws.notificationManager.notifyLowBattery(&dev, level)
 	}
 }
 
 func (ws *WaechterSystem) ReportLinkQuality(link float32, dev Device) {
 	if ws.IsArmed() && link < cfg.GetFloat32(cLinkQualityThreshold) && cfg.GetBool(cTamperAlarm) {
-		DInfo(dev).Float32("link", link).Msg("Link quality is too low! Tamper alarm!")
+		DInfo(&dev).Float32("link", link).Msg("Link quality is too low! Tamper alarm!")
 		ws.Alarm(TamperAlarm, dev)
 	} else if link < cfg.GetFloat32(cLinkQualityThreshold) {
-		DInfo(dev).Float32("link", link).Msg("Link quality is too low! Notify!")
-		ws.notifyNotification(lowLinkQualityNotification(dev, link))
+		DInfo(&dev).Float32("link", link).Msg("Link quality is too low! Notify!")
+		ws.notificationManager.notifyLowLinkQuality(&dev, link)
 	}
 }
 
@@ -184,17 +183,6 @@ func (ws *WaechterSystem) notifyStateHandlers() {
 		handler(ws.state, ws.armingMode, ws.alarmType)
 		return true
 	})
-}
-
-func (ws *WaechterSystem) notifyNotification(note *Notification) {
-	if note == nil {
-		return
-	}
-	for _, h := range ws.notificationHandlers {
-		if h(*note) {
-			return
-		}
-	}
 }
 
 func (ws *WaechterSystem) IsArmed() bool {

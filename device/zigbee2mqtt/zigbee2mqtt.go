@@ -91,7 +91,7 @@ func (zm *zigbee2mqtt) tearDownAllDevices(connectionLost bool) {
 		if !connectionLost {
 			zm.connector.Unsubscribe(dev.Name)
 		}
-		system.DInfo(dev).Msg("Remove Zigbee device")
+		system.DInfo(&dev).Msg("Remove Zigbee device")
 		return true
 	})
 	zm.devices = sync.Map{}
@@ -113,7 +113,7 @@ func (zm *zigbee2mqtt) setupDevice(dev system.Device) {
 		zm.connector.Subscribe(dev.Name, driver.SirenHandler(&dev, zm.systemController))
 	}
 	zm.updateStateForDevice(&dev)
-	system.DInfo(dev).Msg("Setup Zigbee device")
+	system.DInfo(&dev).Msg("Setup Zigbee device")
 }
 
 func (zm *zigbee2mqtt) Stop() {

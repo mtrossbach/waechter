@@ -23,18 +23,27 @@ type Device struct {
 	Type      DeviceType `json:"type"`
 }
 
-func DInfo(device Device) *zerolog.Event {
-	return appendDeviceInfo(device, log.Info())
+func DInfo(device *Device) *zerolog.Event {
+	if device != nil {
+		return appendDeviceInfo(*device, log.Info())
+	}
+	return log.Info()
 }
 
-func DDebug(device Device) *zerolog.Event {
-	return appendDeviceInfo(device, log.Debug())
+func DDebug(device *Device) *zerolog.Event {
+	if device != nil {
+		return appendDeviceInfo(*device, log.Debug())
+	}
+	return log.Debug()
 }
 
-func DError(device Device) *zerolog.Event {
-	return appendDeviceInfo(device, log.Error())
+func DError(device *Device) *zerolog.Event {
+	if device != nil {
+		return appendDeviceInfo(*device, log.Error())
+	}
+	return log.Error()
 }
 
 func appendDeviceInfo(device Device, event *zerolog.Event) *zerolog.Event {
-	return event.Str("id", fmt.Sprintf("%v::%v", device.Namespace, device.Id)).Str("name", device.Name).Str("type", string(device.Type))
+	return event.Str("_id", fmt.Sprintf("%v::%v", device.Namespace, device.Id)).Str("_name", device.Name).Str("_type", string(device.Type))
 }
