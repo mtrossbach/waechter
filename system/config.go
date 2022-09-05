@@ -5,6 +5,7 @@ import (
 )
 
 const (
+	cSystemName           = "general.name"
 	cExitDelay            = "general.exitdelay"
 	cEntryDelay           = "general.entrydelay"
 	cTamperAlarm          = "general.tamperalarm"
@@ -16,6 +17,11 @@ const (
 	cSystemState      = "system.state"
 	cSystemArmingMode = "system.armingMode"
 	cSystemAlarmType  = "system.alarmType"
+
+	cNotificationRecipients = "notification.recipients"
+	cRecipientName          = "name"
+	cRecipientPhone         = "phone"
+	cRecipientLanguage      = "lang"
 )
 
 func init() {

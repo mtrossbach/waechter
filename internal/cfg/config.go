@@ -40,6 +40,24 @@ func GetStrings(key string) []string {
 	return viper.GetStringSlice(key)
 }
 
+func GetStringStringMaps(key string) []map[string]string {
+	data := viper.Get(key).([]interface{})
+	var result []map[string]string
+
+	for _, d := range data {
+		dm := d.(map[string]interface{})
+
+		m := make(map[string]string)
+
+		for k, v := range dm {
+			m[k] = fmt.Sprintf("%v", v)
+		}
+		result = append(result, m)
+	}
+
+	return result
+}
+
 func SetDefault(key string, value interface{}) {
 	viper.SetDefault(key, value)
 }

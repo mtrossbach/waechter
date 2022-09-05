@@ -4,8 +4,10 @@ import (
 	"github.com/mtrossbach/waechter/device/homeassistant"
 	"github.com/mtrossbach/waechter/device/zigbee2mqtt"
 	"github.com/mtrossbach/waechter/internal/cfg"
+	"github.com/mtrossbach/waechter/internal/i18n"
 	"github.com/mtrossbach/waechter/internal/log"
 	"github.com/mtrossbach/waechter/notification/dummy"
+	"github.com/mtrossbach/waechter/notification/whatsapp"
 	"github.com/mtrossbach/waechter/system"
 	"os"
 	"os/signal"
@@ -18,11 +20,13 @@ func main() {
 	log.UpdateLogger()
 
 	log.Info().Msg("Starting up...")
+	i18n.InitI18n()
 
 	sys := system.NewWaechterSystem()
 	go zigbee2mqtt.New().Start(sys)
 	go homeassistant.New().Start(sys)
-	sys.AddNotificationHandler(dummy.New().SendNotification)
+	sys.AddNotificationAdapter(whatsapp.NewWhatsApp())
+	sys.AddNotificationAdapter(dummy.New())
 
 	log.Info().Msg("Started.")
 
