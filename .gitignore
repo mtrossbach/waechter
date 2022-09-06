@@ -19,3 +19,4 @@ __debug_bin
 .env
 config/config.yaml
 .idea/*
+dist/
