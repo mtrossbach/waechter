@@ -48,3 +48,9 @@ dockers:
     extra_files:
       - locales
       - LICENSE
+
+release:
+  github:
+    owner: mtrossbach
+    name: waechter
+  draft: true
