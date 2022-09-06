@@ -25,7 +25,6 @@ dockers:
     goarch: arm64
     build_flag_templates:
       - --platform=linux/arm64/v8
-    skip_push: true
     image_templates:
       - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64"
     extra_files:
@@ -37,7 +36,6 @@ dockers:
     goarm: 6
     build_flag_templates:
       - --platform=linux/arm/v6
-    skip_push: true
     image_templates:
       - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
     extra_files:
@@ -48,7 +46,6 @@ dockers:
     goarch: amd64
     build_flag_templates:
       - --platform=linux/amd64
-    skip_push: true
     image_templates:
       - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
     extra_files:
