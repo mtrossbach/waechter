@@ -1,0 +1,50 @@
+project_name: waechter
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - env:
+    - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm
+      - arm64
+    main: ./cmd/waechter
+archives:
+  - files:
+    - locales/*
+    - LICENSE
+checksum:
+  name_template: 'checksums.txt'
+
+dockers:
+  - use: buildx
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64v8"
+      - "mtrossbach/{{ .ProjectName }}:latest-arm64v8"
+    extra_files:
+      - locales
+      - LICENSE
+  - use: buildx
+    goos: linux
+    goarch: arm
+    goarm: 6
+    image_templates:
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
+      - "mtrossbach/{{ .ProjectName }}:latest-armv6"
+    extra_files:
+      - locales
+      - LICENSE
+  - use: buildx
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
+      - "mtrossbach/{{ .ProjectName }}:latest-amd64"
+    extra_files:
+      - locales
+      - LICENSE
