@@ -24,8 +24,7 @@ dockers:
     goos: linux
     goarch: arm64
     image_templates:
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}"
-      - "mtrossbach/{{ .ProjectName }}:latest"
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64"
     extra_files:
       - locales
       - LICENSE
@@ -34,8 +33,7 @@ dockers:
     goarch: arm
     goarm: 6
     image_templates:
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}"
-      - "mtrossbach/{{ .ProjectName }}:latest"
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
     extra_files:
       - locales
       - LICENSE
@@ -43,12 +41,23 @@ dockers:
     goos: linux
     goarch: amd64
     image_templates:
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}"
-      - "mtrossbach/{{ .ProjectName }}:latest"
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
     extra_files:
       - locales
       - LICENSE
-
+      
+docker_manifests:
+  - name_template: "mtrossbach/{{ .ProjectName }}:{{ .Version }}"
+    image_templates:
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64"
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
+  - name_template: "mtrossbach/{{ .ProjectName }}:latest"
+    image_templates:
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64"
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"     
+    
 release:
   github:
     owner: mtrossbach
