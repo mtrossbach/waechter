@@ -24,8 +24,8 @@ dockers:
     goos: linux
     goarch: arm64
     image_templates:
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64v8"
-      - "mtrossbach/{{ .ProjectName }}:latest-arm64v8"
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}"
+      - "mtrossbach/{{ .ProjectName }}:latest"
     extra_files:
       - locales
       - LICENSE
@@ -34,8 +34,8 @@ dockers:
     goarch: arm
     goarm: 6
     image_templates:
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
-      - "mtrossbach/{{ .ProjectName }}:latest-armv6"
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}"
+      - "mtrossbach/{{ .ProjectName }}:latest"
     extra_files:
       - locales
       - LICENSE
@@ -43,8 +43,8 @@ dockers:
     goos: linux
     goarch: amd64
     image_templates:
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
-      - "mtrossbach/{{ .ProjectName }}:latest-amd64"
+      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}"
+      - "mtrossbach/{{ .ProjectName }}:latest"
     extra_files:
       - locales
       - LICENSE
