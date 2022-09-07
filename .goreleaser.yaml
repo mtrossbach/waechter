@@ -5,12 +5,12 @@ before:
 builds:
   - env:
     - CGO_ENABLED=0
-    goos:
-      - linux
-    goarch:
-      - amd64
-      - arm
-      - arm64
+    targets:
+      - linux_arm_6
+      - linux_arm64
+      - linux_amd64_v1
+      - darwin_amd64
+      - darwin_arm64
     main: ./cmd/waechter
 archives:
   - files:
@@ -25,8 +25,16 @@ dockers:
     goarch: arm64
     build_flag_templates:
       - --platform=linux/arm64/v8
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.description={{ .ProjectName }}
+      - --label=org.opencontainers.image.url=https://github.com/mtrossbach/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/mtrossbach/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=MIT
     image_templates:
-      - "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64"
+      - &arm64v8_image "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64v8"
     extra_files:
       - locales
       - LICENSE
@@ -36,8 +44,16 @@ dockers:
     goarm: 6
     build_flag_templates:
       - --platform=linux/arm/v6
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.description={{ .ProjectName }}
+      - --label=org.opencontainers.image.url=https://github.com/mtrossbach/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/mtrossbach/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=MIT
     image_templates:
-      - "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
+      - &armv6_image "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
     extra_files:
       - locales
       - LICENSE
@@ -46,8 +62,16 @@ dockers:
     goarch: amd64
     build_flag_templates:
       - --platform=linux/amd64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.description={{ .ProjectName }}
+      - --label=org.opencontainers.image.url=https://github.com/mtrossbach/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/mtrossbach/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=MIT
     image_templates:
-      - "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
+      - &amd64_image "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
     extra_files:
       - locales
       - LICENSE
@@ -55,14 +79,14 @@ dockers:
 docker_manifests:
   - name_template: "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}"
     image_templates:
-      - "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64"
-      - "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
-      - "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
+      - *arm64v8_image
+      - *armv6_image
+      - *amd64_image
   - name_template: "ghcr.io/mtrossbach/{{ .ProjectName }}:latest"
     image_templates:
-      - "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64"
-      - "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
-      - "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
+      - *arm64v8_image
+      - *armv6_image
+      - *amd64_image
     
 release:
   github:
