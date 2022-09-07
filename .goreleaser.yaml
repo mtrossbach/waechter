@@ -37,7 +37,7 @@ dockers:
     build_flag_templates:
       - --platform=linux/arm/v6
     image_templates:
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
+      - "test/mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
     extra_files:
       - locales
       - LICENSE
@@ -47,22 +47,22 @@ dockers:
     build_flag_templates:
       - --platform=linux/amd64
     image_templates:
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
+      - "test/mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
     extra_files:
       - locales
       - LICENSE
       
 docker_manifests:
-  - name_template: "mtrossbach/{{ .ProjectName }}:{{ .Version }}"
+  - name_template: "ghcr.io/mtrossbach/{{ .ProjectName }}:{{ .Version }}"
     image_templates:
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64"
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
-  - name_template: "mtrossbach/{{ .ProjectName }}:latest"
+      - "test/mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64"
+      - "test/mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
+      - "test/mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
+  - name_template: "ghcr.io/mtrossbach/{{ .ProjectName }}:latest"
     image_templates:
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64"
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"     
+      - "test/mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64"
+      - "test/mtrossbach/{{ .ProjectName }}:{{ .Version }}-armv6"
+      - "test/mtrossbach/{{ .ProjectName }}:{{ .Version }}-amd64"
     
 release:
   github:
