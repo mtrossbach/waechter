@@ -26,7 +26,7 @@ dockers:
     build_flag_templates:
       - --platform=linux/arm64/v8
     image_templates:
-      - "mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64"
+      - "test/mtrossbach/{{ .ProjectName }}:{{ .Version }}-arm64"
     extra_files:
       - locales
       - LICENSE
