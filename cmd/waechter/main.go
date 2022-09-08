@@ -23,9 +23,18 @@ func main() {
 	i18n.InitI18n()
 
 	sys := system.NewWaechterSystem()
-	go zigbee2mqtt.New().Start(sys)
-	go homeassistant.New().Start(sys)
-	sys.AddNotificationAdapter(whatsapp.NewWhatsApp())
+	if zigbee2mqtt.IsEnabled() {
+		log.Info().Msg("Zigbee2Mqtt enabled")
+		go zigbee2mqtt.New().Start(sys)
+	}
+	if homeassistant.IsEnabled() {
+		log.Info().Msg("HomeAssistant enabled")
+		go homeassistant.New().Start(sys)
+	}
+	if whatsapp.IsEnabled() {
+		log.Info().Msg("WhatsApp enabled")
+		sys.AddNotificationAdapter(whatsapp.NewWhatsApp())
+	}
 	sys.AddNotificationAdapter(dummy.New())
 
 	log.Info().Msg("Started.")

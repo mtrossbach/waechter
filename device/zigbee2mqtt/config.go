@@ -11,6 +11,7 @@ const (
 	cUsername   = "zigbee2mqtt.username"
 	cPassword   = "zigbee2mqtt.password"
 	cBaseTopic  = "zigbee2mqtt.basetopic"
+	cEnable     = "zigbee2mqtt.enable"
 )
 
 func init() {
@@ -26,4 +27,8 @@ func cOptions() connector.Options {
 		Password:  cfg.GetString(cPassword),
 		BaseTopic: cfg.GetString(cBaseTopic),
 	}
+}
+
+func IsEnabled() bool {
+	return cfg.GetBool(cEnable)
 }
