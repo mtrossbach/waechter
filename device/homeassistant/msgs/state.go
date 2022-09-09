@@ -14,5 +14,5 @@ type SensorState struct {
 type Attributes struct {
 	DeviceClass  string `json:"device_class"`
 	FriendlyName string `json:"friendly_name"`
-	MotionValid  bool   `json:"motion_valid"`
+	MotionValid  *bool  `json:"motion_valid"`
 }
