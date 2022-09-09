@@ -19,6 +19,8 @@ The Zigbee2Mqqt integration also supports reading the `tampered` flag which indi
 
 Supported device types via Home Assistant:
 - Motion sensors
+- Contact sensors
+- Smoke sensors
 
 For HomeAssistant the `tampered` functionality is current not supported!
 
