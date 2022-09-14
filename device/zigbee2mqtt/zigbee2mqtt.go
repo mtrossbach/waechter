@@ -10,6 +10,7 @@ import (
 	"github.com/mtrossbach/waechter/internal/cfg"
 	"github.com/mtrossbach/waechter/internal/log"
 	"github.com/mtrossbach/waechter/internal/wslice"
+	"github.com/mtrossbach/waechter/internal/wstring"
 	"github.com/mtrossbach/waechter/system"
 	"sync"
 	"time"
@@ -80,7 +81,7 @@ func (zm *zigbee2mqtt) updateStateForDevice(dev *system.Device) {
 func (zm *zigbee2mqtt) sender(dev *system.Device) driver.Sender {
 	return func(payload any) {
 		if dev != nil {
-			zm.connector.Publish(fmt.Sprintf("%v/set", dev.Name), payload)
+			zm.connector.Publish(fmt.Sprintf("%v/set", dev.Id), payload)
 		}
 	}
 }
@@ -89,7 +90,7 @@ func (zm *zigbee2mqtt) tearDownAllDevices(connectionLost bool) {
 	zm.devices.Range(func(id, d any) bool {
 		dev := d.(system.Device)
 		if !connectionLost {
-			zm.connector.Unsubscribe(dev.Name)
+			zm.connector.Unsubscribe(dev.Id)
 		}
 		system.DInfo(&dev).Msg("Remove Zigbee device")
 		return true
@@ -102,15 +103,19 @@ func (zm *zigbee2mqtt) setupDevice(dev system.Device) {
 
 	switch dev.Type {
 	case system.MotionSensor:
-		zm.connector.Subscribe(dev.Name, driver.MotionSensorHandler(&dev, zm.systemController))
+		zm.connector.Subscribe(dev.Id, driver.MotionSensorHandler(&dev, zm.systemController))
 	case system.ContactSensor:
-		zm.connector.Subscribe(dev.Name, driver.ContactSensorHandler(&dev, zm.systemController))
+		zm.connector.Subscribe(dev.Id, driver.ContactSensorHandler(&dev, zm.systemController))
 	case system.SmokeSensor:
-		zm.connector.Subscribe(dev.Name, driver.SmokeSensorHandler(&dev, zm.systemController))
+		zm.connector.Subscribe(dev.Id, driver.SmokeSensorHandler(&dev, zm.systemController))
 	case system.Keypad:
-		zm.connector.Subscribe(dev.Name, driver.KeypadHandler(&dev, zm.systemController, zm.sender(&dev)))
+		zm.connector.Subscribe(dev.Id, driver.KeypadHandler(&dev, zm.systemController, zm.sender(&dev)))
 	case system.Siren:
-		zm.connector.Subscribe(dev.Name, driver.SirenHandler(&dev, zm.systemController))
+		zm.connector.Subscribe(dev.Id, driver.SirenHandler(&dev, zm.systemController))
+	default:
+		zm.devices.Delete(dev.Id)
+		system.DError(&dev).Msg("Could not setup Zigbee device: unknown type")
+		return
 	}
 	zm.updateStateForDevice(&dev)
 	system.DInfo(&dev).Msg("Setup Zigbee device")
@@ -154,18 +159,66 @@ func (zm *zigbee2mqtt) handleNewDeviceList(msg mqtt.Message) {
 
 	zm.tearDownAllDevices(false)
 
+	deviceConfig := zm.getDeviceConfig()
 	for _, d := range relevantDevices {
-		dev := zm.deviceFromMessage(d)
+		config, ok := deviceConfig[d.FriendlyName]
+		if ok {
+			delete(deviceConfig, d.FriendlyName)
+		} else if !cfg.GetBool(cAutoDeviceDiscovery) {
+			continue
+		}
+		dev := zm.deviceFromMessageAndConfig(&d, &config)
+		if dev != nil {
+			zm.setupDevice(*dev)
+		}
+	}
+
+	for k, v := range deviceConfig {
+		log.Error().Str("_id", k).Msg("Device is not yet available in Zigbee broker. Subscribing events from the device anyways in hope it will appear in the future!")
+		dev := zm.deviceFromMessageAndConfig(nil, &v)
 		if dev != nil {
 			zm.setupDevice(*dev)
 		}
 	}
 }
 
+func (zm *zigbee2mqtt) getDeviceConfig() map[string]devicesConfig {
+	configs := cfg.GetObjects[devicesConfig](cDevices)
+	result := make(map[string]devicesConfig)
+	for _, c := range configs {
+		result[c.Id] = c
+	}
+	return result
+}
+
+func (zm *zigbee2mqtt) deviceFromMessageAndConfig(message *Z2MDeviceInfo, config *devicesConfig) *system.Device {
+	if config == nil && message != nil {
+		return zm.deviceFromMessage(*message)
+	}
+
+	if len(config.Type) > 0 && len(config.Id) > 0 {
+		return &system.Device{
+			Namespace: namespace,
+			Id:        config.Id,
+			Name:      wstring.StrDef(config.Name, config.Id),
+			Type:      config.Type,
+		}
+	} else if message != nil {
+		dev := zm.deviceFromMessage(*message)
+		if dev != nil {
+			dev.Name = wstring.StrDef(config.Name, dev.Name)
+			dev.Type = system.DeviceType(wstring.StrDef(string(config.Type), string(dev.Type)))
+		}
+		return dev
+	} else {
+		return nil
+	}
+}
+
 func (zm *zigbee2mqtt) deviceFromMessage(message Z2MDeviceInfo) *system.Device {
 	dev := system.Device{
 		Namespace: namespace,
-		Id:        message.IeeeAddress,
+		Id:        message.FriendlyName,
 		Name:      message.FriendlyName,
 	}
 

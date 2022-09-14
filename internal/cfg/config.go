@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"encoding/json"
 	"fmt"
 	"path"
 	"sort"
@@ -40,6 +41,27 @@ func GetString(key string) string {
 
 func GetStrings(key string) []string {
 	return viper.GetStringSlice(key)
+}
+
+func GetObjects[T any](key string) []T {
+	data := viper.Get(key)
+	if data == nil {
+		return []T{}
+	}
+	data = data.([]interface{})
+
+	b, err := json.Marshal(data)
+	if err != nil {
+		return []T{}
+	}
+
+	r := make([]T, 0)
+	json.Unmarshal(b, &r)
+	if err != nil {
+		return []T{}
+	}
+
+	return r
 }
 
 func GetStringStringMaps(key string) []map[string]string {
