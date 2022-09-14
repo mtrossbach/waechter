@@ -17,6 +17,7 @@ const (
 )
 
 func init() {
+	cfg.SetDefault(cEnable, false)
 	cfg.SetDefault(cConnection, "mqtt://localhost:1883")
 	cfg.SetDefault(cBaseTopic, "zigbee2mqtt")
 	cfg.SetDefault(cAutoDeviceDiscovery, true)

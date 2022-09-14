@@ -23,13 +23,16 @@ func main() {
 	i18n.InitI18n()
 
 	sys := system.NewWaechterSystem()
+	oneEnabled := false
 	if zigbee2mqtt.IsEnabled() {
 		log.Info().Msg("Zigbee2Mqtt enabled")
 		go zigbee2mqtt.New().Start(sys)
+		oneEnabled = true
 	}
 	if homeassistant.IsEnabled() {
 		log.Info().Msg("HomeAssistant enabled")
 		go homeassistant.New().Start(sys)
+		oneEnabled = true
 	}
 	if whatsapp.IsEnabled() {
 		log.Info().Msg("WhatsApp enabled")
@@ -37,6 +40,9 @@ func main() {
 	}
 	sys.AddNotificationAdapter(dummy.New())
 
+	if !oneEnabled {
+		panic("No device framework configured. Exit!")
+	}
 	log.Info().Msg("Started.")
 
 	cancelChan := make(chan os.Signal, 1)

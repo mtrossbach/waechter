@@ -11,6 +11,7 @@ const (
 )
 
 func init() {
+	cfg.SetDefault(cEnable, false)
 	cfg.SetDefault(cAutoDeviceDiscovery, true)
 }
 
