@@ -147,7 +147,7 @@ func (zm *zigbee2mqtt) handleNewDeviceList(msg mqtt.Message) {
 
 	relevantDevices := make(map[string]Z2MDeviceInfo)
 	for _, device := range newDevices {
-		if device.Type == "EndDevice" && device.Supported {
+		if (device.Type == "EndDevice" || device.Type == "Router") && device.Supported {
 			relevantDevices[device.IeeeAddress] = device
 		}
 	}

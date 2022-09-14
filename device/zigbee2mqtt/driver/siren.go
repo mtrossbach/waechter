@@ -7,6 +7,7 @@ import (
 	"github.com/mtrossbach/waechter/device/zigbee2mqtt/connector"
 	"github.com/mtrossbach/waechter/internal/log"
 	"github.com/mtrossbach/waechter/system"
+	"time"
 )
 
 func SirenHandler(dev *system.Device, controller device.SystemController) connector.MessageHandler {
@@ -35,4 +36,7 @@ func SirenHandler(dev *system.Device, controller device.SystemController) connec
 
 func SirenStateUpdater(controller device.SystemController, sender Sender) {
 	sender(newWarningPayload(controller.GetAlarmType()))
+	time.AfterFunc(100*time.Millisecond, func() {
+		sender(newWarningPayload(controller.GetAlarmType()))
+	})
 }
