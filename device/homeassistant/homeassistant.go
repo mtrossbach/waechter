@@ -31,13 +31,14 @@ func New() *homeassistant {
 func (ha *homeassistant) Start(controller dd.SystemController) {
 	ha.devices = sync.Map{}
 	ha.connector = connector.NewConnector()
-	log.Info().Str("uri", cfg.GetString(cURL)).Msg("Connecting to HomeAssistant...")
+	log.Debug().Str("uri", cfg.GetString(cURL)).Msg("Connecting to HomeAssistant...")
 	err := ha.connector.Connect(cfg.GetString(cURL), cfg.GetString(cToken), ha.disconnectedHandler(controller))
 	if err != nil {
 		log.Error().Err(err).Msg("Could not connect to HomeAssistant. Retrying in a few seconds...")
 		ha.reconnect(controller)
 		return
 	}
+	log.Info().Str("uri", cfg.GetString(cURL)).Msg("Connected to HomeAssistant.")
 	go ha.testConnection(ha.connection)
 	st, err := ha.getStates()
 	if err != nil {

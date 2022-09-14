@@ -33,9 +33,9 @@ func New() *zigbee2mqtt {
 func (zm *zigbee2mqtt) Start(systemController device.SystemController) {
 	zm.systemController = systemController
 	systemController.SubscribeStateUpdate(zm, zm.updateState)
-	log.Info().Str("uri", cfg.GetString(cConnection)).Msg("Connecting to Zigbee2Mqtt broker...")
+	log.Debug().Str("uri", cfg.GetString(cConnection)).Msg("Connecting to Zigbee2Mqtt broker...")
 	err := zm.connector.Connect(cOptions(), func() {
-		log.Info().Msg("Connected to Zigbee2Mqtt broker")
+		log.Info().Str("uri", cfg.GetString(cConnection)).Msg("Connected to Zigbee2Mqtt broker")
 	}, func(err error) {
 		if err != nil {
 			log.Error().Err(err).Msg("Connection to Zigbee2Mqtt broker lost. Retrying in a few seconds...")
