@@ -1,5 +1,13 @@
 package zigbee2mqtt
 
+import "github.com/mtrossbach/waechter/system"
+
+type devicesConfig struct {
+	Id   string            `json:"id"`
+	Name string            `json:"name"`
+	Type system.DeviceType `json:"type"`
+}
+
 type Z2MDeviceInfo struct {
 	IeeeAddress        string     `json:"ieee_address"`
 	Type               string     `json:"type"`

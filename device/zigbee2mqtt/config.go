@@ -6,17 +6,21 @@ import (
 )
 
 const (
-	cConnection = "zigbee2mqtt.connection"
-	cClientId   = "zigbee2mqtt.clientid"
-	cUsername   = "zigbee2mqtt.username"
-	cPassword   = "zigbee2mqtt.password"
-	cBaseTopic  = "zigbee2mqtt.basetopic"
-	cEnable     = "zigbee2mqtt.enable"
+	cConnection          = "zigbee2mqtt.connection"
+	cClientId            = "zigbee2mqtt.clientid"
+	cUsername            = "zigbee2mqtt.username"
+	cPassword            = "zigbee2mqtt.password"
+	cBaseTopic           = "zigbee2mqtt.basetopic"
+	cEnable              = "zigbee2mqtt.enable"
+	cAutoDeviceDiscovery = "zigbee2mqtt.autodevicediscovery"
+	cDevices             = "zigbee2mqtt.devices"
 )
 
 func init() {
+	cfg.SetDefault(cEnable, false)
 	cfg.SetDefault(cConnection, "mqtt://localhost:1883")
 	cfg.SetDefault(cBaseTopic, "zigbee2mqtt")
+	cfg.SetDefault(cAutoDeviceDiscovery, true)
 }
 
 func cOptions() connector.Options {

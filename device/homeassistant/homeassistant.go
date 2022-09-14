@@ -7,6 +7,7 @@ import (
 	"github.com/mtrossbach/waechter/device/homeassistant/msgs"
 	"github.com/mtrossbach/waechter/internal/cfg"
 	"github.com/mtrossbach/waechter/internal/log"
+	"github.com/mtrossbach/waechter/internal/wstring"
 	"github.com/mtrossbach/waechter/system"
 	"strings"
 	"sync"
@@ -30,13 +31,14 @@ func New() *homeassistant {
 func (ha *homeassistant) Start(controller dd.SystemController) {
 	ha.devices = sync.Map{}
 	ha.connector = connector.NewConnector()
-	log.Info().Str("uri", cfg.GetString(cURL)).Msg("Connecting to HomeAssistant...")
+	log.Debug().Str("uri", cfg.GetString(cURL)).Msg("Connecting to HomeAssistant...")
 	err := ha.connector.Connect(cfg.GetString(cURL), cfg.GetString(cToken), ha.disconnectedHandler(controller))
 	if err != nil {
 		log.Error().Err(err).Msg("Could not connect to HomeAssistant. Retrying in a few seconds...")
 		ha.reconnect(controller)
 		return
 	}
+	log.Info().Str("uri", cfg.GetString(cURL)).Msg("Connected to HomeAssistant.")
 	go ha.testConnection(ha.connection)
 	st, err := ha.getStates()
 	if err != nil {
@@ -44,49 +46,93 @@ func (ha *homeassistant) Start(controller dd.SystemController) {
 		return
 	}
 
-	var devices []system.Device
+	deviceConfig := ha.getDeviceConfig()
 
 	for _, s := range st.Result {
-		if s.Attributes.DeviceClass == "motion" && (s.Attributes.MotionValid == nil || *s.Attributes.MotionValid == true) {
-			dev := system.Device{
-				Id:        s.EntityID,
-				Namespace: namespace,
-				Name:      s.Attributes.FriendlyName,
-				Type:      system.MotionSensor,
-			}
-			devices = append(devices, dev)
+		config, ok := deviceConfig[s.EntityID]
+		if ok {
+			delete(deviceConfig, s.EntityID)
+		} else if !cfg.GetBool(cAutoDeviceDiscovery) {
+			continue
+		}
 
-		} else if s.Attributes.DeviceClass == "opening" || s.Attributes.DeviceClass == "door" || s.Attributes.DeviceClass == "window" || s.Attributes.DeviceClass == "garage_door" {
-			dev := system.Device{
-				Id:        s.EntityID,
-				Namespace: namespace,
-				Name:      s.Attributes.FriendlyName,
-				Type:      system.ContactSensor,
+		dev := ha.deviceFromSensorStateAndConfig(&s, &config)
+		if dev != nil {
+			if ok && len(config.Battery) > 0 {
+				ha.setupDevice(*dev, config.Battery, controller)
+			} else {
+				prefix := strings.Replace(dev.Id[:strings.LastIndex(dev.Id, "_")], "binary_sensor.", "sensor.", 1)
+				var batteryEntityId string
+				for _, s := range st.Result {
+					if strings.HasPrefix(s.EntityID, prefix) && s.Attributes.DeviceClass == "battery" {
+						batteryEntityId = s.EntityID
+						break
+					}
+				}
+
+				ha.setupDevice(*dev, batteryEntityId, controller)
 			}
-			devices = append(devices, dev)
-		} else if s.Attributes.DeviceClass == "smoke" {
-			dev := system.Device{
-				Id:        s.EntityID,
-				Namespace: namespace,
-				Name:      s.Attributes.FriendlyName,
-				Type:      system.SmokeSensor,
-			}
-			devices = append(devices, dev)
 		}
 	}
 
-	for _, dev := range devices {
-		prefix := strings.Replace(dev.Id[:strings.LastIndex(dev.Id, "_")], "binary_sensor.", "sensor.", 1)
-		var batteryEntityId string
-		for _, s := range st.Result {
-			if strings.HasPrefix(s.EntityID, prefix) && s.Attributes.DeviceClass == "battery" {
-				batteryEntityId = s.EntityID
-				break
-			}
-		}
-		ha.setupDevice(dev, batteryEntityId, controller)
+	for k := range deviceConfig {
+		log.Error().Str("_id", k).Msg("Cannot add device because it is not available in HomeAssistant!")
 	}
 
+}
+
+func (ha *homeassistant) deviceFromSensorStateAndConfig(state *msgs.SensorState, config *devicesConfig) *system.Device {
+	if config == nil && state != nil {
+		return ha.deviceFromSensorState(*state)
+	}
+
+	if len(config.Type) > 0 && len(config.Id) > 0 {
+		return &system.Device{
+			Namespace: namespace,
+			Id:        config.Id,
+			Name:      wstring.StrDef(config.Name, config.Id),
+			Type:      config.Type,
+		}
+	} else if state != nil {
+		dev := ha.deviceFromSensorState(*state)
+		if dev != nil {
+			dev.Name = wstring.StrDef(config.Name, dev.Name)
+			dev.Type = system.DeviceType(wstring.StrDef(string(config.Type), string(dev.Type)))
+		}
+		return dev
+	} else {
+		return nil
+	}
+}
+
+func (ha *homeassistant) deviceFromSensorState(s msgs.SensorState) *system.Device {
+	if s.Attributes.DeviceClass == "motion" && (s.Attributes.MotionValid == nil || *s.Attributes.MotionValid == true) {
+		dev := system.Device{
+			Id:        s.EntityID,
+			Namespace: namespace,
+			Name:      s.Attributes.FriendlyName,
+			Type:      system.MotionSensor,
+		}
+		return &dev
+
+	} else if s.Attributes.DeviceClass == "opening" || s.Attributes.DeviceClass == "door" || s.Attributes.DeviceClass == "window" || s.Attributes.DeviceClass == "garage_door" {
+		dev := system.Device{
+			Id:        s.EntityID,
+			Namespace: namespace,
+			Name:      s.Attributes.FriendlyName,
+			Type:      system.ContactSensor,
+		}
+		return &dev
+	} else if s.Attributes.DeviceClass == "smoke" {
+		dev := system.Device{
+			Id:        s.EntityID,
+			Namespace: namespace,
+			Name:      s.Attributes.FriendlyName,
+			Type:      system.SmokeSensor,
+		}
+		return &dev
+	}
+	return nil
 }
 
 func (ha *homeassistant) disconnectedHandler(controller dd.SystemController) connector.DisconnectedHandler {
@@ -122,19 +168,20 @@ func (ha *homeassistant) setupDevice(dev system.Device, batteryEntityId string, 
 	if err != nil {
 		system.DError(&dev).Err(err).Msg("Could not setup HomeAssistant device!")
 	} else {
-		system.DInfo(&dev).Msg("Setup HomeAssistant device")
+		if len(batteryEntityId) > 0 {
+			sId, err := ha.connector.SubscribeStateTrigger(batteryEntityId, driver.BatteryHandler(&dev, controller))
+			if err != nil {
+				log.Error().Str("_battery", batteryEntityId).Str("_id", dev.Id).Err(err).Msg("Could not setup HomeAssistant battery tracker!")
+			}
+			ha.devices.Store(dev, sId)
+
+			system.DInfo(&dev).Str("_battery", batteryEntityId).Msg("Setup HomeAssistant device")
+		} else {
+			system.DInfo(&dev).Msg("Setup HomeAssistant device")
+		}
 	}
 	ha.devices.Store(dev, sId)
 
-	if len(batteryEntityId) > 0 {
-		sId, err := ha.connector.SubscribeStateTrigger(batteryEntityId, driver.BatteryHandler(&dev, controller))
-		if err != nil {
-			log.Error().Str("_batteryId", batteryEntityId).Str("_id", dev.Id).Err(err).Msg("Could not setup HomeAssistant battery tracker!")
-		} else {
-			log.Info().Str("_batteryId", batteryEntityId).Str("_id", dev.Id).Msg("Setup HomeAssistant battery tracker")
-		}
-		ha.devices.Store(dev, sId)
-	}
 }
 
 func (ha *homeassistant) tearDownAllDevices(connectionLost bool) {
@@ -168,4 +215,13 @@ func (ha *homeassistant) testConnection(conId uint64) {
 		<-time.After(30 * time.Second)
 	}
 
+}
+
+func (ha *homeassistant) getDeviceConfig() map[string]devicesConfig {
+	configs := cfg.GetObjects[devicesConfig](cDevices)
+	result := make(map[string]devicesConfig)
+	for _, c := range configs {
+		result[c.Id] = c
+	}
+	return result
 }
