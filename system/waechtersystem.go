@@ -76,12 +76,6 @@ func (ws *WaechterSystem) Arm(mode ArmingMode, dev Device) bool {
 }
 
 func (ws *WaechterSystem) Disarm(enteredPin string, dev Device) bool {
-	if ws.state == DisarmedState {
-		// Requesting device probably has a wrong system state -> update it
-		ws.notifyStateHandlers()
-		return false
-	}
-
 	pinOk := false
 	disarmPins := cfg.GetStrings(cDisarmPins)
 	for _, pin := range disarmPins {
