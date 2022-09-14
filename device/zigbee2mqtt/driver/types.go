@@ -97,9 +97,9 @@ func newWarningPayload(alarmType system.AlarmType) warningPayload {
 			Mode:            mode,
 			Level:           level(cfg.GetString(cLevel)),
 			StrobeLevel:     level(cfg.GetString(cLevel)),
-			Strobe:          true,
-			StrobeDutyCycle: 5,
-			Duration:        5,
+			Strobe:          mode != stop,
+			StrobeDutyCycle: 1,
+			Duration:        10 * 60,
 		},
 	}
 }
