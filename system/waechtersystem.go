@@ -30,9 +30,7 @@ func NewWaechterSystem() *WaechterSystem {
 }
 
 func (ws *WaechterSystem) initState() {
-	cfgState := State(cfg.GetString(cSystemState))
-	cfgArmingMode := ArmingMode(cfg.GetString(cSystemArmingMode))
-	cfgAlarmType := AlarmType(cfg.GetString(cSystemAlarmType))
+	cfgState, cfgArmingMode, cfgAlarmType := loadState()
 
 	if isValidState(cfgState) && isValidArmingMode(cfgArmingMode) && isValidAlarmType(cfgAlarmType) {
 		if cfgState == EntryDelayState {
@@ -165,10 +163,7 @@ func (ws *WaechterSystem) setState(state State, mode ArmingMode, alarmType Alarm
 	ws.alarmType = alarmType
 	log.Info().Str("state", string(state)).Str("armingMode", string(mode)).Str("alarmType", string(alarmType)).Msg("System state updated")
 	ws.notifyStateHandlers()
-	cfg.SetString(cSystemState, string(state))
-	cfg.SetString(cSystemArmingMode, string(mode))
-	cfg.SetString(cSystemAlarmType, string(alarmType))
-	cfg.WriteConfig()
+	saveState(state, mode, alarmType)
 }
 
 func (ws *WaechterSystem) notifyStateHandlers() {

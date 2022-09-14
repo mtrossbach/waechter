@@ -2,6 +2,7 @@ package cfg
 
 import (
 	"fmt"
+	"path"
 	"sort"
 	"strings"
 
@@ -63,12 +64,8 @@ func SetDefault(key string, value interface{}) {
 	viper.SetDefault(key, value)
 }
 
-func SetString(key string, value string) {
-	viper.Set(key, value)
-}
-
-func WriteConfig() {
-	viper.WriteConfig()
+func ConfigDir() string {
+	return path.Dir(viper.ConfigFileUsed())
 }
 
 func Print() {

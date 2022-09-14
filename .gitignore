@@ -20,3 +20,4 @@ __debug_bin
 config/config.yaml
 .idea/*
 dist/
+config/state
