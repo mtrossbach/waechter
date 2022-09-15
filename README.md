@@ -8,7 +8,7 @@ Wächter is a home alarm system. It supports standard smart home devices such as
 
 The project is still in an early phase and not all planned features have been implemented yet.
 
-Supported device types via Zigbee2Mqqt:
+Supported device types via Zigbee2Mqtt:
 - Motion sensors
 - Contact sensors
 - Smoke sensors
@@ -33,6 +33,3 @@ As soon as I have a wired zigbee device like e.g. a stationary siren I will chec
 - Sirens via Zigbee2Mqtt are not tested yet
 - Siren support via Home Assistant
 - SMS sending
-
-## License
-[MIT](https://choosealicense.com/licenses/mit/)
