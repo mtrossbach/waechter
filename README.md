@@ -8,26 +8,39 @@ Wächter is a home alarm system. It supports standard smart home devices such as
 
 The project is still in an early phase and not all planned features have been implemented yet.
 
-Supported device types via Zigbee2Mqtt:
-- Motion sensors
-- Contact sensors
-- Smoke sensors
-- Sirens
-- Keypads
+Currently there are integrations with Zigbee2Mqtt and Home Assistant.
 
-The Zigbee2Mqqt integration also supports reading the `tamper` flag which indicates that the device is being opened or dismounted without authorization and leads to an alarm.
+**Supported device types:**
 
-Supported device types via Home Assistant:
-- Motion sensors
-- Contact sensors
-- Smoke sensors
+|                           | **Zigbee2Mqtt** | **Home Assistant** |
+|:-------------------------:|:---------------:|:------------------:|
+| **Motion sensor**         |:white_check_mark:|:white_check_mark:|
+| **Contact/window sensor** |:white_check_mark:|:white_check_mark:|
+| **Smoke sensor**          |:white_check_mark:|:white_check_mark:|
+| **Siren**                 |:white_check_mark:| :x:                  |
+| **Keypad**                |:white_check_mark:| :x:                  |
 
-For HomeAssistant the `tamper` functionality is current not supported via ZHA integration. If you have integrated zigbee devices via Zigbee2Mqtt it should work.
+To increase security, the alarm system can respond to tampering, poor radio link quality (for wireless devices) and running low batteries.
+
+**Supported device state attributes:**
+
+|                           | **Zigbee2Mqtt** | **Home Assistant** |
+|:-------------------------:|:---------------:|:------------------:|
+| **`tamper` flag**         |:white_check_mark:|:white_check_mark: (not working with zigbee devices and ZHA)|
+| **Link quality** |:white_check_mark:|:x:|
+| **Battery**          |:white_check_mark:|:white_check_mark:|
+
+In the event of an alarm, a notification can be sent.
+
+**Currently supported notification channels:**
+
+- :white_check_mark: WhatsApp Business Cloud API
 
 ## Security Limitations
 Because of the way the zigbee protocol works, battery-powered devices only report when they want to transmit information to the network. Otherwise these devices are in sleep mode. It is therefore not possible to determine whether someone is intentionally interrupting the radio contact or blocking it with an interference signal.  
 
 ## TODO (not implemented yet)
 - Siren support via Home Assistant
+- Home Assistant link quality
 - SMS sending
 - More configuration options
