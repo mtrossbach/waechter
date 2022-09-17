@@ -58,20 +58,23 @@ func (ha *homeassistant) Start(controller dd.SystemController) {
 
 		dev := ha.deviceFromSensorStateAndConfig(&s, &config)
 		if dev != nil {
+			var batteryId string
+			var tamperId string
 			if ok && len(config.Battery) > 0 {
-				ha.setupDevice(*dev, config.Battery, controller)
+				batteryId = config.Battery
 			} else {
-				prefix := strings.Replace(dev.Id[:strings.LastIndex(dev.Id, "_")], "binary_sensor.", "sensor.", 1)
-				var batteryEntityId string
-				for _, s := range st.Result {
-					if strings.HasPrefix(s.EntityID, prefix) && s.Attributes.DeviceClass == "battery" {
-						batteryEntityId = s.EntityID
-						break
-					}
-				}
-
-				ha.setupDevice(*dev, batteryEntityId, controller)
+				prefix := strings.Replace(entityPrefix(dev.Id), "binary_sensor.", "sensor.", 1)
+				batteryId = st.GetEntityIdWithPrefixAndType(prefix, "battery")
 			}
+			if ok && len(config.Tamper) > 0 {
+				tamperId = config.Tamper
+			} else {
+				prefix := entityPrefix(dev.Id)
+				tamperId = st.GetEntityIdWithPrefixAndType(prefix, "tamper")
+			}
+
+			ha.setupDevice(*dev, batteryId, tamperId, controller)
+
 		}
 	}
 
@@ -152,7 +155,7 @@ func (ha *homeassistant) reconnect(controller dd.SystemController) {
 	}()
 }
 
-func (ha *homeassistant) setupDevice(dev system.Device, batteryEntityId string, controller dd.SystemController) {
+func (ha *homeassistant) setupDevice(dev system.Device, batteryEntityId string, tamperEntityId string, controller dd.SystemController) {
 	var sId uint64 = 0
 	var err error = nil
 
@@ -165,6 +168,7 @@ func (ha *homeassistant) setupDevice(dev system.Device, batteryEntityId string, 
 		sId, err = ha.connector.SubscribeStateTrigger(dev.Id, driver.SmokeSensorHandler(&dev, controller))
 	}
 
+	li := system.DInfo(&dev)
 	if err != nil {
 		system.DError(&dev).Err(err).Msg("Could not setup HomeAssistant device!")
 	} else {
@@ -174,14 +178,19 @@ func (ha *homeassistant) setupDevice(dev system.Device, batteryEntityId string, 
 				log.Error().Str("_battery", batteryEntityId).Str("_id", dev.Id).Err(err).Msg("Could not setup HomeAssistant battery tracker!")
 			}
 			ha.devices.Store(dev, sId)
-
-			system.DInfo(&dev).Str("_battery", batteryEntityId).Msg("Setup HomeAssistant device")
-		} else {
-			system.DInfo(&dev).Msg("Setup HomeAssistant device")
+			li.Str("_battery", batteryEntityId)
+		}
+		if len(tamperEntityId) > 0 {
+			sId, err := ha.connector.SubscribeStateTrigger(tamperEntityId, driver.TamperHandler(&dev, controller))
+			if err != nil {
+				log.Error().Str("_tamper", tamperEntityId).Str("_id", dev.Id).Err(err).Msg("Could not setup HomeAssistant tamper tracker!")
+			}
+			ha.devices.Store(dev, sId)
+			li.Str("_tamper", tamperEntityId)
 		}
 	}
 	ha.devices.Store(dev, sId)
-
+	li.Msg("Setup HomeAssistant device")
 }
 
 func (ha *homeassistant) tearDownAllDevices(connectionLost bool) {
