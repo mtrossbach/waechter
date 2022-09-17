@@ -15,21 +15,19 @@ Supported device types via Zigbee2Mqtt:
 - Sirens
 - Keypads
 
-The Zigbee2Mqqt integration also supports reading the `tampered` flag which indicates that the device is being opened or dismounted without authorization and leads to an alarm.
+The Zigbee2Mqqt integration also supports reading the `tamper` flag which indicates that the device is being opened or dismounted without authorization and leads to an alarm.
 
 Supported device types via Home Assistant:
 - Motion sensors
 - Contact sensors
 - Smoke sensors
 
-For HomeAssistant the `tampered` functionality is current not supported!
+For HomeAssistant the `tamper` functionality is current not supported via ZHA integration. If you have integrated zigbee devices via Zigbee2Mqtt it should work.
 
 ## Security Limitations
 Because of the way the zigbee protocol works, battery-powered devices only report when they want to transmit information to the network. Otherwise these devices are in sleep mode. It is therefore not possible to determine whether someone is intentionally interrupting the radio contact or blocking it with an interference signal.  
 
-As soon as I have a wired zigbee device like e.g. a stationary siren I will check if it is possible to verify at least with this kind of devices if there is a clean radio connection. If this is possible I will integrate such a test into the system.
-
 ## TODO (not implemented yet)
-- Sirens via Zigbee2Mqtt are not tested yet
 - Siren support via Home Assistant
 - SMS sending
+- More configuration options
