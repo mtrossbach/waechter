@@ -26,7 +26,7 @@ To increase security, the alarm system can respond to tampering, poor radio link
 
 |                           | **Zigbee2Mqtt** | **Home Assistant** |
 |:-------------------------:|:---------------:|:------------------:|
-| **`tamper` flag**         |:white_check_mark:|:white_check_mark: (not working with zigbee devices and ZHA)|
+| **`tamper` flag**         |:white_check_mark:|:white_check_mark: <br />(not working with zigbee devices and ZHA)|
 | **Link quality** |:white_check_mark:|:x:|
 | **Battery**          |:white_check_mark:|:white_check_mark:|
 
