@@ -32,6 +32,6 @@ require (
 require (
 	github.com/rs/zerolog v1.28.0
 	github.com/spf13/viper v1.13.0
-	golang.org/x/net v0.0.0-20220909164309-bea034e7d591
+	golang.org/x/net v0.0.0-20220919171627-f8f703f97925
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 )
