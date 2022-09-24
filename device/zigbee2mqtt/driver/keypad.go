@@ -36,9 +36,9 @@ func KeypadHandler(dev *system.Device, controller device.SystemController, sende
 			keypadSendState(payload.Action, &payload.ActionTransaction, sender) //Send confirmation (required for some devices)
 
 			if payload.Action == "arm_day_zones" {
-				controller.Arm(system.StayMode, *dev)
+				controller.ArmStay(*dev)
 			} else if payload.Action == "arm_all_zones" {
-				controller.Arm(system.AwayMode, *dev)
+				controller.ArmAway(*dev)
 			} else if payload.Action == "disarm" {
 				controller.Disarm(payload.ActionCode, *dev)
 			} else if payload.Action == "panic" {
@@ -53,5 +53,5 @@ func keypadSendState(state string, transactionId *int, sender Sender) {
 }
 
 func KeypadStateUpdater(controller device.SystemController, sender Sender) {
-	keypadSendState(sysStateToKeypadState(controller.GetState(), controller.GetArmingMode(), controller.GetAlarmType()), nil, sender)
+	keypadSendState(sysStateToKeypadState(controller.GetArmState(), controller.GetAlarmType()), nil, sender)
 }

@@ -23,6 +23,15 @@ type Device struct {
 	Type      DeviceType `json:"type"`
 }
 
+func systemDevice() Device {
+	return Device{
+		Namespace: "system",
+		Id:        "system",
+		Name:      "System",
+		Type:      "system",
+	}
+}
+
 func DInfo(device *Device) *zerolog.Event {
 	if device != nil {
 		return appendDeviceInfo(*device, log.Info())

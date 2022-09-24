@@ -37,6 +37,7 @@ func SirenHandler(dev *system.Device, controller device.SystemController) connec
 func SirenStateUpdater(controller device.SystemController, sender Sender) {
 	sender(newWarningPayload(controller.GetAlarmType()))
 	time.AfterFunc(100*time.Millisecond, func() {
+		// Resend after 100ms because some sirens do not correctly process payloads during active alarms
 		sender(newWarningPayload(controller.GetAlarmType()))
 	})
 }

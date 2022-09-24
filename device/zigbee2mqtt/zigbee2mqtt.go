@@ -57,7 +57,7 @@ func (zm *zigbee2mqtt) reconnect(systemController device.SystemController) {
 	zm.Start(systemController)
 }
 
-func (zm *zigbee2mqtt) updateState(state system.State, armingMode system.ArmingMode, alarmType system.AlarmType) {
+func (zm *zigbee2mqtt) updateState(state system.ArmState, alarmType system.AlarmType) {
 	zm.devices.Range(func(_, d any) bool {
 		dev := d.(system.Device)
 		zm.updateStateForDevice(&dev)

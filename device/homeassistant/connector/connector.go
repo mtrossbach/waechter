@@ -100,9 +100,9 @@ func (c *Connector) handleMessage(msg []byte, token string) {
 			AccessToken: token,
 		})
 	case msgs.AuthInvalid:
-		log.Error().Msg("Authentication is invalid")
+		log.Error().Msg("HomeAssistant authentication is invalid")
 	case msgs.AuthOk:
-		log.Info().Msg("Authentication successful")
+		log.Debug().Msg("HomeAssistant authentication successful")
 		go c.writerPump()
 	default:
 		ch, ok := c.cmd.Load(result.Id)

@@ -6,21 +6,25 @@ import (
 	"github.com/mtrossbach/waechter/internal/log"
 	"os"
 	"path"
+	"time"
 )
 
-type systemstate struct {
-	State State      `json:"state"`
-	Mode  ArmingMode `json:"mode"`
-	Alarm AlarmType  `json:"alarm"`
+type State struct {
+	ArmState      ArmState   `json:"armState"`
+	Alarm         AlarmType  `json:"alarm"`
+	WrongPinCount int        `json:"wrongPinCount"`
+	DelayEnd      *time.Time `json:"delayEnd"`
 }
 
-func saveState(state State, mode ArmingMode, alarm AlarmType) {
-	s := systemstate{
-		State: state,
-		Mode:  mode,
-		Alarm: alarm,
-	}
+func (s *State) IsArmed() bool {
+	return s.ArmState == ArmedStayState || s.ArmState == ArmedAwayState
+}
 
+func (s *State) IsArmedOrExitDelay() bool {
+	return s.IsArmed() || s.ArmState == ExitDelayState
+}
+
+func (s *State) writeToDisk() {
 	data, err := json.Marshal(s)
 	if err != nil {
 		log.Error().Err(err).Msg("Could not save state")
@@ -34,19 +38,15 @@ func saveState(state State, mode ArmingMode, alarm AlarmType) {
 	}
 }
 
-func loadState() (State, ArmingMode, AlarmType) {
+func (s *State) loadFromDisk() {
 	data, err := os.ReadFile(path.Join(cfg.ConfigDir(), "state"))
 	if err != nil {
 		log.Error().Err(err).Msg("Could not read state")
-		return "", "", ""
+		return
 	}
 
-	var s systemstate
-	err = json.Unmarshal(data, &s)
+	err = json.Unmarshal(data, s)
 	if err != nil {
 		log.Error().Err(err).Msg("Could parse state")
-		return "", "", ""
 	}
-
-	return s.State, s.Mode, s.Alarm
 }

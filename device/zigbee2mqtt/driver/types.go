@@ -108,10 +108,12 @@ func newKeypadSetState(mode string, transaction *int) keypadSetState {
 	return keypadSetState{ArmMode: armMode{Mode: mode, Transaction: transaction}}
 }
 
-func sysStateToKeypadState(state system.State, aMode system.ArmingMode, aType system.AlarmType) string {
+func sysStateToKeypadState(state system.ArmState, aType system.AlarmType) string {
 	switch aType {
 	case system.NoAlarm:
 		break
+	case system.EntryDelayAlarm:
+		return "entry_delay"
 	case system.PanicAlarm:
 		return "panic"
 	default:
@@ -121,17 +123,12 @@ func sysStateToKeypadState(state system.State, aMode system.ArmingMode, aType sy
 	switch state {
 	case system.DisarmedState:
 		return "disarm"
-	case system.ArmingState:
+	case system.ExitDelayState:
 		return "exit_delay"
-	case system.ArmedState:
-		switch aMode {
-		case system.AwayMode:
-			return "arm_all_zones"
-		case system.StayMode:
-			return "arm_day_zones"
-		}
-	case system.EntryDelayState:
-		return "entry_delay"
+	case system.ArmedStayState:
+		return "arm_day_zones"
+	case system.ArmedAwayState:
+		return "arm_all_zones"
 	}
 	return "disarm"
 }
