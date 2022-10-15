@@ -174,11 +174,11 @@ func (c *Connector) deviceMessageHandler(id device.Id) MessageHandler {
 					c.ctrl.DeliverSensorValue(id, s, device.MotionSensorValue{Motion: *v})
 				}
 			case device.ContactSensor:
-				if v := extract[bool](data, "occupancy"); v != nil {
+				if v := extract[bool](data, "contact"); v != nil {
 					c.ctrl.DeliverSensorValue(id, s, device.ContactSensorValue{Contact: *v})
 				}
 			case device.SmokeSensor:
-				if v := extract[bool](data, "occupancy"); v != nil {
+				if v := extract[bool](data, "smoke"); v != nil {
 					c.ctrl.DeliverSensorValue(id, s, device.SmokeSensorValue{Smoke: *v})
 				}
 			case device.BatteryWarningSensor:
