@@ -132,7 +132,9 @@ func (w *Waechter) DeliverSensorValue(id device.Id, sensor device.Sensor, value 
 
 	} else if v, ok := value.(device.TamperSensorValues); ok {
 		if v.Tamper {
-			w.alarm(id, alarm.Tamper, false)
+			if (z.Armed && config.TamperAlarmWhileArmed()) || (!z.Armed && config.TamperAlarmWhileDisarmed()) {
+				w.alarm(id, alarm.Tamper, false)
+			}
 		}
 
 	} else if v, ok := value.(device.BatteryLevelSensorValue); ok {
@@ -238,6 +240,22 @@ func (w *Waechter) SystemState() State {
 func (w *Waechter) DeviceListUpdated(system DeviceConnector) {
 	if system == nil {
 		return
+	}
+	deviceSpecs := system.EnumerateDevices()
+	log.Info().Str("connector", system.DisplayName()).Str("id", system.Id()).Msg("Received new device list:")
+	for _, s := range deviceSpecs {
+		if ad, ok := w.devices[s.Id]; ok {
+			ad.Spec = s
+		}
+		var sensors []string
+		var actors []string
+		for _, ss := range s.Sensors {
+			sensors = append(sensors, string(ss))
+		}
+		for _, sa := range s.Actors {
+			actors = append(actors, string(sa))
+		}
+		log.Info().Str("id", string(s.Id)).Str("displayName", s.DisplayName).Str("vendor", s.Vendor).Str("model", s.Model).Strs("sensors", sensors).Strs("actors", actors).Msg("\tDevice found")
 	}
 
 	for _, d := range w.devices {

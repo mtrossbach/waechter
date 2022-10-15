@@ -53,7 +53,7 @@ func (c *Connector) Setup(controller system.Controller) {
 		log.Info().Str("id", c.conf.Id).Str("url", c.conf.Url).Msg("Connected to HomeAssistant")
 		c.connected = true
 		c.ctrl.OperationalStateChanged(c)
-		c.updateDeviceList()
+		go c.updateDeviceList()
 	}
 
 	c.conn.OnConnectionLost = func(conn *connection.Connection, err error) {
@@ -77,7 +77,11 @@ func (c *Connector) updateDeviceList() {
 		prefix := entityPrefix(s.EntityID)
 		dev, ok := devs[prefix]
 		if !ok {
-			dev = assembledDevice{}
+			dev = assembledDevice{
+				entityId:    prefix,
+				displayName: s.Attributes.FriendlyName,
+				sensors:     map[device.Sensor]string{},
+			}
 		}
 
 		switch s.Attributes.DeviceClass {
@@ -99,6 +103,13 @@ func (c *Connector) updateDeviceList() {
 
 		dev.spec = dev.generateSpec(c.Id())
 		devs[prefix] = dev
+	}
+
+	c.availableDevices = sync.Map{}
+	for _, a := range devs {
+		if a.spec.IsRelevant() {
+			c.availableDevices.Store(a.spec.Id, a)
+		}
 	}
 
 	c.activeDevices.Range(func(key, _ any) bool {

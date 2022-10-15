@@ -50,8 +50,6 @@ func (c *Connector) Setup(controller system.Controller) {
 	c.ctrl = controller
 	c.conn.OnConnect = func(conn *connection) {
 		log.Info().Str("id", c.conf.Id).Str("url", c.conf.Url).Msg("Connected to Zigbee2Mqtt broker")
-		c.conn.Subscribe("bridge/devices", c.handleNewDeviceList)
-		c.conn.Subscribe("bridge/event", c.handleDeviceEvent)
 		c.connected = true
 		c.ctrl.OperationalStateChanged(c)
 	}
@@ -63,7 +61,10 @@ func (c *Connector) Setup(controller system.Controller) {
 	}
 
 	log.Debug().Str("id", c.conf.Id).Str("url", c.conf.Url).Msg("Connecting to Zigbee2Mqtt broker...")
+	c.conn.Subscribe("bridge/devices", c.handleNewDeviceList)
+	c.conn.Subscribe("bridge/event", c.handleDeviceEvent)
 	c.conn.Connect()
+
 }
 
 func (c *Connector) Teardown() {
@@ -165,6 +166,7 @@ func (c *Connector) deviceMessageHandler(id device.Id) MessageHandler {
 			log.Error().Str("device", string(id)).Str("payload", string(msg.Payload())).Msg("Could not process device data for unknown device")
 		}
 
+		actionDone := false
 		for _, s := range spec.(device.Spec).Sensors {
 			switch s {
 			case device.MotionSensor:
@@ -196,9 +198,17 @@ func (c *Connector) deviceMessageHandler(id device.Id) MessageHandler {
 					c.ctrl.DeliverSensorValue(id, s, device.LinkQualitySensorValue{LinkQuality: float32(*v) / float32(255)})
 				}
 			case device.ArmingSensor, device.DisarmingSensor, device.PanicSensor:
-				if v := extract[string](data, "action"); v != nil {
-					transactionId := extract[int](data, "action_transaction")
-					c.sendPayload(id, newArmModePayload(c.ctrl.SystemState(), transactionId))
+				if actionDone {
+					continue
+				} else {
+					actionDone = true
+				}
+				if v := extract[string](data, "action"); v != nil && len(*v) > 0 {
+					transactionId := extract[float64](data, "action_transaction")
+					c.sendPayload(id, armModePayload{ArmMode: armMode{
+						Mode:        *v,
+						Transaction: transactionId,
+					}})
 					c.ctrl.DeliverSensorValue(id, s, device.PanicSensorValue{Panic: *v == "panic"})
 
 					if *v == "arm_all_zones" {

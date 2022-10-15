@@ -21,11 +21,11 @@ type armModePayload struct {
 }
 
 type armMode struct {
-	Mode        string `json:"mode"`
-	Transaction *int   `json:"transaction,omitempty"`
+	Mode        string   `json:"mode"`
+	Transaction *float64 `json:"transaction,omitempty"`
 }
 
-func newArmModePayload(state system.State, transactionId *int) armModePayload {
+func newArmModePayload(state system.State, transactionId *float64) armModePayload {
 	var mode string
 
 	switch state.Alarm {

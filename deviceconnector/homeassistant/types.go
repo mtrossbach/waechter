@@ -10,18 +10,12 @@ type assembledDevice struct {
 	spec        device.Spec
 	entityId    string
 	displayName string
-	vendor      string
-	model       string
-	description string
 }
 
 func (a *assembledDevice) generateSpec(connectorId string) device.Spec {
 	spec := device.Spec{
 		Id:          device.NewId(connectorId, a.entityId),
 		DisplayName: a.displayName,
-		Vendor:      a.vendor,
-		Model:       a.model,
-		Description: a.description,
 		Sensors:     []device.Sensor{},
 		Actors:      []device.Actor{},
 	}
@@ -33,5 +27,8 @@ func (a *assembledDevice) generateSpec(connectorId string) device.Spec {
 }
 
 func entityPrefix(entityId string) string {
-	return entityId[:strings.LastIndex(entityId, "_")] + "_"
+	if strings.Contains(entityId, "_") {
+		return entityId[:strings.LastIndex(entityId, "_")] + "_"
+	}
+	return entityId
 }

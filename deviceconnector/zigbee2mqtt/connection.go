@@ -70,6 +70,9 @@ func (c *connection) Subscribe(topic string, handler MessageHandler) {
 	}
 
 	c.handler[topicName] = handler
+	if c.client == nil {
+		return
+	}
 	token := c.client.Subscribe(topicName, 1, nil)
 	token.Wait()
 	if token.Error() != nil {
@@ -110,12 +113,11 @@ func (c *connection) messageHandler() mqtt.MessageHandler {
 
 func (c *connection) onConnectHandler() mqtt.OnConnectHandler {
 	return func(client mqtt.Client) {
-		if c.OnConnect != nil {
-			c.OnConnect(c)
-		}
-
 		for topic, handler := range c.handler {
 			c.Subscribe(topic, handler)
+		}
+		if c.OnConnect != nil {
+			c.OnConnect(c)
 		}
 	}
 }

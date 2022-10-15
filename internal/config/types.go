@@ -30,5 +30,6 @@ type ZoneConfig struct {
 type Person struct {
 	Name     string `json:"name"`
 	Pin      string `json:"pin"`
+	Lang     string `json:"lang"`
 	WhatsApp string `json:"whatsapp"`
 }
