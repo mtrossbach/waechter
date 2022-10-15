@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/mtrossbach/waechter/internal/log"
-	"github.com/mtrossbach/waechter/system"
+	"github.com/mtrossbach/waechter/system/alarm"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
 )
@@ -32,19 +32,22 @@ func Translate(lang string, key Key) string {
 	return val
 }
 
-func TranslateAlarm(lang string, alarmType system.AlarmType) string {
+func TranslateAlarm(lang string, alarmType alarm.Type) string {
 	switch alarmType {
-	case system.NoAlarm:
+	case alarm.None:
 		return Translate(lang, AlarmNone)
-	case system.BurglarAlarm:
+	case alarm.EntryDelay:
+		return Translate(lang, AlarmEntryDelay)
+	case alarm.Burglar:
 		return Translate(lang, AlarmBurglar)
-	case system.PanicAlarm:
+	case alarm.Panic:
 		return Translate(lang, AlarmPanic)
-	case system.FireAlarm:
+	case alarm.Fire:
 		return Translate(lang, AlarmFire)
-	case system.TamperAlarm:
+	case alarm.Tamper:
 		return Translate(lang, AlarmTamper)
+	case alarm.TamperPin:
+		return Translate(lang, AlarmTamperPin)
 	}
-
 	return string(alarmType)
 }

@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/mtrossbach/waechter/internal/cfg"
-	"github.com/mtrossbach/waechter/internal/i18n"
 	"github.com/mtrossbach/waechter/internal/log"
-	"github.com/mtrossbach/waechter/system"
 	"io"
 	"net/http"
 	"time"
@@ -107,7 +105,8 @@ func (w *WhatsApp) post(phoneId string, payload MessagePayload, response interfa
 	return resp, nil
 }
 
-func (w *WhatsApp) NotifyAlarm(recipient system.Recipient, systemName string, alarmType system.AlarmType, device *system.Device) bool {
+/*
+func (w *WhatsApp) NotifyAlarm(recipient system.Recipient, systemName string, alarmType system.AlarmState, device *device.Device) bool {
 	err := w.send(recipient.Phone, cfg.GetString(cAlarmTemplateName), recipient.Lang, []string{
 		systemName, i18n.TranslateAlarm(recipient.Lang, alarmType), device.Name,
 	})
@@ -115,7 +114,7 @@ func (w *WhatsApp) NotifyAlarm(recipient system.Recipient, systemName string, al
 	return err == nil
 }
 
-func (w *WhatsApp) NotifyRecovery(recipient system.Recipient, systemName string, device *system.Device) bool {
+func (w *WhatsApp) NotifyRecovery(recipient system.Recipient, systemName string, device *device.Device) bool {
 	err := w.send(recipient.Phone, cfg.GetString(cRecoverTemplateName), recipient.Lang, []string{
 		systemName,
 	})
@@ -123,7 +122,7 @@ func (w *WhatsApp) NotifyRecovery(recipient system.Recipient, systemName string,
 	return err == nil
 }
 
-func (w *WhatsApp) NotifyLowBattery(recipient system.Recipient, systemName string, device *system.Device, batteryLevel float32) bool {
+func (w *WhatsApp) NotifyLowBattery(recipient system.Recipient, systemName string, device *device.Device, batteryLevel float32) bool {
 	err := w.send(recipient.Phone, cfg.GetString(cNotificationTemplateName), recipient.Lang, []string{
 		systemName, device.Name, i18n.Translate(recipient.Lang, i18n.WALowBattery),
 	})
@@ -131,7 +130,7 @@ func (w *WhatsApp) NotifyLowBattery(recipient system.Recipient, systemName strin
 	return err == nil
 }
 
-func (w *WhatsApp) NotifyLowLinkQuality(recipient system.Recipient, systemName string, device *system.Device, quality float32) bool {
+func (w *WhatsApp) NotifyLowLinkQuality(recipient system.Recipient, systemName string, device *device.Device, quality float32) bool {
 	err := w.send(recipient.Phone, cfg.GetString(cNotificationTemplateName), recipient.Lang, []string{
 		systemName, device.Name, i18n.Translate(recipient.Lang, i18n.WALowLinkQuality),
 	})
@@ -154,3 +153,4 @@ func (w *WhatsApp) NotifyAutoDisarm(recipient system.Recipient, systemName strin
 
 	return err == nil
 }
+*/
