@@ -42,6 +42,27 @@ func getStrings(key string) []string {
 	return viper.GetStringSlice(key)
 }
 
+func getObject[T any](key string) *T {
+	data := viper.Get(key)
+	if data == nil {
+		return nil
+	}
+	data = data.(interface{})
+
+	b, err := json.Marshal(data)
+	if err != nil {
+		return nil
+	}
+
+	var r T
+	json.Unmarshal(b, &r)
+	if err != nil {
+		return nil
+	}
+
+	return &r
+}
+
 func getObjects[T any](key string) []T {
 	data := viper.Get(key)
 	if data == nil {

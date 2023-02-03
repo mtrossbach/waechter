@@ -7,6 +7,7 @@ import (
 	"github.com/mtrossbach/waechter/internal/config"
 	"github.com/mtrossbach/waechter/internal/i18n"
 	"github.com/mtrossbach/waechter/internal/log"
+	"github.com/mtrossbach/waechter/notification/whatsapp"
 	"github.com/mtrossbach/waechter/system"
 	"os"
 	"os/signal"
@@ -40,16 +41,15 @@ func main() {
 		}
 	}
 
-	/*if whatsapp.IsEnabled() {
-		log.Info().Msg("WhatsApp enabled")
-		sys.AddNotificationAdapter(whatsapp.NewWhatsApp())
+	for _, n := range config.Notifications() {
+		switch n {
+		case "whatsapp":
+			if config := config.WhatsAppConfig(); config != nil {
+				waechter.AddNotificationAdapter(whatsapp.NewWhatsApp(*config))
+			}
+		}
 	}
-	sys.AddNotificationAdapter(dummy.New())
 
-
-	if !oneEnabled {
-		panic("No device framework configured. Exit!")
-	}*/
 	log.Info().Msg("Started.")
 
 	cancelChan := make(chan os.Signal, 1)

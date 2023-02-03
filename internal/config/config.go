@@ -26,6 +26,9 @@ const (
 
 	cLogLevel  = "log.level"
 	cLogFormat = "log.format"
+
+	cWhatsApp      = "whatsapp"
+	cNotifications = "notifications"
 )
 
 func Init() {
@@ -46,6 +49,7 @@ func Init() {
 	setDefault(cPersons, []Person{})
 	setDefault(cZigbee2MqttConfigs, []Zigbee2MqttConfig{})
 	setDefault(cHomeAssistantConfigs, []HomeAssistantConfig{})
+	setDefault(cNotifications, []string{})
 
 	setDefault(cLogLevel, "info")
 	setDefault(cLogFormat, "text")
@@ -117,4 +121,12 @@ func LogFormat() string {
 
 func LogLevel() string {
 	return strings.ToLower(getString(cLogLevel))
+}
+
+func WhatsAppConfig() *WhatsAppConfiguration {
+	return getObject[WhatsAppConfiguration](cWhatsApp)
+}
+
+func Notifications() []string {
+	return getStrings(cNotifications)
 }

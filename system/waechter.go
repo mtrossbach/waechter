@@ -19,6 +19,7 @@ type Waechter struct {
 	devices          map[device.Id]*device.Device
 	deviceConnectors []DeviceConnector
 	wrongPinCount    int
+	noteMgr          *notificationManager
 
 	entryTimers          sync.Map
 	unavailabilityTimers sync.Map
@@ -26,12 +27,12 @@ type Waechter struct {
 
 func NewWaechter() *Waechter {
 	w := Waechter{
-		name:                 config.SystemName(),
 		state:                State{},
 		zones:                nil,
 		devices:              nil,
 		wrongPinCount:        0,
 		deviceConnectors:     []DeviceConnector{},
+		noteMgr:              newNotificationManager(),
 		entryTimers:          sync.Map{},
 		unavailabilityTimers: sync.Map{},
 	}
@@ -54,6 +55,10 @@ func (w *Waechter) RemoveDeviceConnector(id string) {
 		(*connector).Teardown()
 		w.deviceConnectors = wslice.Remove[DeviceConnector](w.deviceConnectors, i)
 	}
+}
+
+func (w *Waechter) AddNotificationAdapter(adapter NotificationAdapter) {
+	w.noteMgr.AddAdapter(adapter)
 }
 
 func (w *Waechter) loadState() {
@@ -127,7 +132,7 @@ func (w *Waechter) DeliverSensorValue(id device.Id, sensor device.Sensor, value 
 
 	} else if v, ok := value.(device.BatteryWarningSensorValue); ok {
 		if v.BatteryWarning {
-			//TODO
+			w.noteMgr.NotifyLowBattery(w.specForDeviceId(id), w.zoneForDeviceId(id), 0)
 		}
 
 	} else if v, ok := value.(device.TamperSensorValues); ok {
@@ -139,12 +144,12 @@ func (w *Waechter) DeliverSensorValue(id device.Id, sensor device.Sensor, value 
 
 	} else if v, ok := value.(device.BatteryLevelSensorValue); ok {
 		if v.BatteryLevel < config.BatteryLevelThreshold() {
-			//TODO
+			w.noteMgr.NotifyLowBattery(w.specForDeviceId(id), w.zoneForDeviceId(id), v.BatteryLevel)
 		}
 
 	} else if v, ok := value.(device.LinkQualitySensorValue); ok {
 		if v.LinkQuality < config.LinkQualityThreshold() {
-			//TODO
+			w.noteMgr.NotifyLowLinkQuality(w.specForDeviceId(id), w.zoneForDeviceId(id), v.LinkQuality)
 		}
 
 	} else if v, ok := value.(device.ArmingSensorValue); ok {
@@ -188,9 +193,17 @@ func (w *Waechter) alarm(id device.Id, alarmType alarm.Type, delayedZone bool) {
 	}
 }
 
+func (w *Waechter) specForDeviceId(id device.Id) device.Spec {
+	d, ok := w.devices[id]
+	if !ok {
+		d = systemDevice()
+	}
+	return (*d).Spec
+}
+
 func (w *Waechter) _alarm(id device.Id, alarm alarm.Type) {
-	//TODO: logging
 	w.setAlarm(alarm)
+	w.noteMgr.NotifyAlarm(alarm, w.specForDeviceId(id), w.zoneForDeviceId(id))
 }
 
 func (w *Waechter) arm(id device.Id, mode arm.Mode) bool {
@@ -212,8 +225,9 @@ func (w *Waechter) disarm(id device.Id, enteredPin string) bool {
 	if person != nil {
 		w.wrongPinCount = 0
 		if w.state.Alarm != alarm.None {
-			//TODO: recovery
+			w.noteMgr.NotifyRecovery(w.specForDeviceId(id), w.zoneForDeviceId(id))
 		}
+		log.Info().Str("name", person.Name).Msg("Disarmed by pin")
 		w.setAlarm(alarm.None)
 		w.setArmMode(arm.Disarmed)
 		w.entryTimers.Range(func(key, value any) bool {
@@ -255,16 +269,16 @@ func (w *Waechter) DeviceListUpdated(system DeviceConnector) {
 		for _, sa := range s.Actors {
 			actors = append(actors, string(sa))
 		}
-		log.Info().Str("id", string(s.Id)).Str("displayName", s.DisplayName).Str("vendor", s.Vendor).Str("model", s.Model).Strs("sensors", sensors).Strs("actors", actors).Msg("\tDevice found")
+		log.Info().Str("id", string(s.Id)).Str("displayName", s.DisplayName).Str("vendor", s.Vendor).Str("model", s.Model).Strs("sensors", sensors).Strs("actors", actors).Msg("\t- Device detected")
 	}
 
 	for _, d := range w.devices {
 		if !d.Active && d.Id.Prefix() == system.Id() {
 			err := system.ActivateDevice(d.Id)
 			if err != nil {
-				device.DError(d).Err(err).Msg("Could not activate device")
+				device.DError(d).Err(err).Msg("✗ Could not activate device")
 			} else {
-				device.DInfo(d).Msg("Activated device")
+				device.DInfo(d).Msg("✓ Device active")
 			}
 		}
 	}
@@ -310,7 +324,12 @@ func (w *Waechter) setArmMode(mode arm.Mode) {
 
 		w.updateActors(device.StateActor, w.state.stateActorPayload())
 
-		log.Info().Str("mode", string(mode)).Msg("System mode changed")
+		l := log.Info().Str("mode", string(mode))
+		if w.state.Armed() {
+			l = l.Int("exitDelay", config.ExitDelay())
+		}
+		l.Msg("System mode changed")
+
 	}
 }
 
@@ -321,7 +340,11 @@ func (w *Waechter) setAlarm(a alarm.Type) {
 		w.updateActors(device.StateActor, w.state.stateActorPayload())
 		w.updateActors(device.AlarmActor, w.state.alarmActorPayload())
 
-		log.Info().Str("alarm", string(a)).Msg("Alarm changed")
+		l := log.Info().Str("alarm", string(a))
+		if a == alarm.EntryDelay {
+			l = l.Int("entryDelay", config.EntryDelay())
+		}
+		l.Msg("Alarm changed")
 	}
 }
 

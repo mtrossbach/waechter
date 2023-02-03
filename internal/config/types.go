@@ -33,3 +33,13 @@ type Person struct {
 	Lang     string `json:"lang"`
 	WhatsApp string `json:"whatsapp"`
 }
+
+type WhatsAppConfiguration struct {
+	PhoneId              string `json:"phoneId"`
+	TemplateAlarm        string `json:"templateAlarm"`
+	TemplateAutoArm      string `json:"templateAutoArm"`
+	TemplateAutoDisarm   string `json:"templateAutoDisarm"`
+	TemplateNotification string `json:"templateNotification"`
+	TemplateRecover      string `json:"templateRecover"`
+	Token                string `json:"token"`
+}
