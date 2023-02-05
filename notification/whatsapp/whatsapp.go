@@ -60,11 +60,11 @@ func (w *WhatsApp) send(phone string, template string, lang string, parameters [
 
 	r, err := w.post(w.config.PhoneId, payload, &response)
 	if err != nil {
-		log.Error().Err(err).Str("phone", phone).Msg("Could not send WhatsApp message")
+		log.Error().Err(err).Str("phone", phone).Interface("response", response).Msg("Could not send WhatsApp message")
 		return err
 	}
 	if r.StatusCode >= 300 {
-		log.Error().Str("phone", phone).Int("status-code", r.StatusCode).Msg("Could not send WhatsApp message")
+		log.Error().Str("phone", phone).Interface("response", response).Int("status-code", r.StatusCode).Msg("Could not send WhatsApp message")
 		return fmt.Errorf("could not send message to whatsapp, statuscode is %v", r.StatusCode)
 	}
 	log.Info().Str("phone", phone).Msg("Successfully sent message via WhatsApp")
@@ -116,7 +116,7 @@ func (w *WhatsApp) Name() string {
 
 func (w *WhatsApp) NotifyAlarm(person config.Person, systemName string, a alarm.Type, device device.Spec, zone zone.Zone) bool {
 	err := w.send(person.WhatsApp, w.config.TemplateAlarm, person.Lang, []string{
-		systemName, i18n.TranslateAlarm(person.Lang, a), device.DisplayName,
+		systemName, i18n.TranslateAlarm(person.Lang, a), device.HumanReadableName(),
 	})
 
 	return err == nil
@@ -132,7 +132,7 @@ func (w *WhatsApp) NotifyRecovery(person config.Person, systemName string, devic
 
 func (w *WhatsApp) NotifyLowBattery(person config.Person, systemName string, device device.Spec, zone zone.Zone, batteryLevel float32) bool {
 	err := w.send(person.WhatsApp, w.config.TemplateNotification, person.Lang, []string{
-		systemName, device.DisplayName, i18n.Translate(person.Lang, i18n.WALowBattery),
+		systemName, device.HumanReadableName(), i18n.Translate(person.Lang, i18n.WALowBattery),
 	})
 
 	return err == nil
@@ -140,7 +140,7 @@ func (w *WhatsApp) NotifyLowBattery(person config.Person, systemName string, dev
 
 func (w *WhatsApp) NotifyLowLinkQuality(person config.Person, systemName string, device device.Spec, zone zone.Zone, quality float32) bool {
 	err := w.send(person.WhatsApp, w.config.TemplateNotification, person.Lang, []string{
-		systemName, device.DisplayName, i18n.Translate(person.Lang, i18n.WALowLinkQuality),
+		systemName, device.HumanReadableName(), i18n.Translate(person.Lang, i18n.WALowLinkQuality),
 	})
 
 	return err == nil

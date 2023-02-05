@@ -1,6 +1,7 @@
 package system
 
 import (
+	"bufio"
 	"github.com/mtrossbach/waechter/internal/config"
 	"github.com/mtrossbach/waechter/internal/log"
 	"github.com/mtrossbach/waechter/internal/wslice"
@@ -8,6 +9,8 @@ import (
 	"github.com/mtrossbach/waechter/system/arm"
 	"github.com/mtrossbach/waechter/system/device"
 	"github.com/mtrossbach/waechter/system/zone"
+	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -40,6 +43,36 @@ func NewWaechter() *Waechter {
 	w.loadState()
 	w.loadZones()
 	w.loadDevices()
+
+	go func() {
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			s, err := reader.ReadString('\n')
+			if err == nil {
+				pts := strings.Split(strings.TrimSpace(s), " ")
+				cmd := strings.ToLower(pts[0])
+				ok := false
+				switch cmd {
+				case "arm":
+					w.arm(systemDeviceId, arm.All)
+					ok = true
+				case "disarm":
+					if len(pts) > 1 {
+						w.disarm(systemDeviceId, pts[1])
+						ok = true
+					}
+				case "entry-delay":
+					if w.state.Armed() {
+						w.alarm(systemDeviceId, alarm.Burglar, true)
+						ok = true
+					}
+				}
+				if !ok {
+					log.Error().Str("cmd", cmd).Msg("Could not execute command.")
+				}
+			}
+		}
+	}()
 	return &w
 }
 
@@ -108,14 +141,14 @@ func (w *Waechter) DeliverSensorValue(id device.Id, sensor device.Sensor, value 
 
 	if v, ok := value.(device.MotionSensorValue); ok {
 		if z.Armed && v.Motion {
-			if !(z.Delayed && w.isDuringExitDelay()) {
+			if !(w.isDuringExitDelay()) {
 				w.alarm(id, alarm.Burglar, z.Delayed)
 			}
 		}
 
 	} else if v, ok := value.(device.ContactSensorValue); ok {
 		if z.Armed && !v.Contact {
-			if !(z.Delayed && w.isDuringExitDelay()) {
+			if !(w.isDuringExitDelay()) {
 				w.alarm(id, alarm.Burglar, z.Delayed)
 			}
 		}
@@ -239,8 +272,9 @@ func (w *Waechter) disarm(id device.Id, enteredPin string) bool {
 		return true
 	} else {
 		w.wrongPinCount += 1
-		log.Info().Str("device", string(id))
+		log.Info().Str("device", string(id)).Int("wrongPinCount", w.wrongPinCount).Msg("Wrong PIN entered.")
 		if w.wrongPinCount > config.MaxWrongPinCount() {
+			log.Info().Str("device", string(id)).Int("wrongPinCount", w.wrongPinCount).Msg("Maximum number of wrong PINs exceed.")
 			w.alarm(id, alarm.TamperPin, false)
 		}
 		return false
@@ -329,6 +363,24 @@ func (w *Waechter) setArmMode(mode arm.Mode) {
 			l = l.Int("exitDelay", config.ExitDelay())
 		}
 		l.Msg("System mode changed")
+		if w.state.Armed() {
+			go func() {
+				for true {
+					if w.state.Armed() && w.isDuringExitDelay() {
+						time.Sleep(5 * time.Second)
+						r := config.ExitDelay() - int(time.Now().Sub(w.state.armModeUpdated).Seconds())
+						if r > 0 {
+							log.Info().Int("remaining", r).Msg("Remaining exit delay.")
+						}
+					} else {
+						if w.state.Armed() {
+							log.Info().Msg("Exit delay ended.")
+						}
+						return
+					}
+				}
+			}()
+		}
 
 	}
 }

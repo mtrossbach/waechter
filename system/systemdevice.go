@@ -9,7 +9,15 @@ func systemDevice() *device.Device {
 		Id:     systemDeviceId,
 		Zone:   "system",
 		Active: true,
-		Spec:   device.Spec{},
-		State:  map[device.Sensor]any{},
+		Spec: device.Spec{
+			Id:          systemDeviceId,
+			DisplayName: "System Device",
+			Vendor:      "",
+			Model:       "",
+			Description: "",
+			Sensors:     nil,
+			Actors:      nil,
+		},
+		State: map[device.Sensor]any{},
 	}
 }

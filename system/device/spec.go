@@ -12,6 +12,13 @@ type Spec struct {
 	Actors      []Actor
 }
 
+func (s Spec) HumanReadableName() string {
+	if len(s.DisplayName) > 0 {
+		return s.DisplayName
+	}
+	return string(s.Id)
+}
+
 func (s Spec) IsRelevant() bool {
 	return len(s.Actors) > 0 || wslice.ContainsAny(s.Sensors,
 		[]Sensor{MotionSensor, SmokeSensor, PanicSensor, TamperSensor, ArmingSensor, DisarmingSensor})
