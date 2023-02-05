@@ -1,4 +1,4 @@
-FROM scratch
+FROM golang:alpine
 
 ENTRYPOINT ["/waechter"]
 COPY waechter /
