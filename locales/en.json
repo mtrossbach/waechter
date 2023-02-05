@@ -12,6 +12,10 @@
     "translation": "alarm end"
   },
   {
+    "id": "alarm_entry_delay",
+    "translation": "entry delay"
+  },
+  {
     "id": "alarm_burglar",
     "translation": "burglar alarm"
   },
@@ -26,5 +30,9 @@
   {
     "id": "alarm_tamper",
     "translation": "tamper alarm"
+  },
+  {
+    "id": "alarm_tamper_pin",
+    "translation": "pin tamper alarm"
   }
 ]

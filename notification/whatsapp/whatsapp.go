@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/mtrossbach/waechter/internal/cfg"
+	"github.com/mtrossbach/waechter/internal/config"
 	"github.com/mtrossbach/waechter/internal/i18n"
 	"github.com/mtrossbach/waechter/internal/log"
-	"github.com/mtrossbach/waechter/system"
+	"github.com/mtrossbach/waechter/system/alarm"
+	"github.com/mtrossbach/waechter/system/device"
+	"github.com/mtrossbach/waechter/system/zone"
 	"io"
 	"net/http"
 	"time"
@@ -15,12 +17,13 @@ import (
 
 type WhatsApp struct {
 	client *http.Client
+	config config.WhatsAppConfiguration
 }
 
-func NewWhatsApp() *WhatsApp {
+func NewWhatsApp(configuration config.WhatsAppConfiguration) *WhatsApp {
 	return &WhatsApp{client: &http.Client{
 		Timeout: 60 * time.Second,
-	}}
+	}, config: configuration}
 }
 
 func (w *WhatsApp) send(phone string, template string, lang string, parameters []string) error {
@@ -55,7 +58,7 @@ func (w *WhatsApp) send(phone string, template string, lang string, parameters [
 
 	var response interface{}
 
-	r, err := w.post(cfg.GetString(cPhoneId), payload, &response)
+	r, err := w.post(w.config.PhoneId, payload, &response)
 	if err != nil {
 		log.Error().Err(err).Str("phone", phone).Msg("Could not send WhatsApp message")
 		return err
@@ -81,7 +84,7 @@ func (w *WhatsApp) post(phoneId string, payload MessagePayload, response interfa
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", cfg.GetString(cToken)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", w.config.Token))
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
 	resp, err := w.client.Do(req)
@@ -107,48 +110,52 @@ func (w *WhatsApp) post(phoneId string, payload MessagePayload, response interfa
 	return resp, nil
 }
 
-func (w *WhatsApp) NotifyAlarm(recipient system.Recipient, systemName string, alarmType system.AlarmType, device *system.Device) bool {
-	err := w.send(recipient.Phone, cfg.GetString(cAlarmTemplateName), recipient.Lang, []string{
-		systemName, i18n.TranslateAlarm(recipient.Lang, alarmType), device.Name,
+func (w *WhatsApp) Name() string {
+	return "WhatsApp"
+}
+
+func (w *WhatsApp) NotifyAlarm(person config.Person, systemName string, a alarm.Type, device device.Spec, zone zone.Zone) bool {
+	err := w.send(person.WhatsApp, w.config.TemplateAlarm, person.Lang, []string{
+		systemName, i18n.TranslateAlarm(person.Lang, a), device.DisplayName,
 	})
 
 	return err == nil
 }
 
-func (w *WhatsApp) NotifyRecovery(recipient system.Recipient, systemName string, device *system.Device) bool {
-	err := w.send(recipient.Phone, cfg.GetString(cRecoverTemplateName), recipient.Lang, []string{
+func (w *WhatsApp) NotifyRecovery(person config.Person, systemName string, device device.Spec, zone zone.Zone) bool {
+	err := w.send(person.WhatsApp, w.config.TemplateRecover, person.Lang, []string{
 		systemName,
 	})
 
 	return err == nil
 }
 
-func (w *WhatsApp) NotifyLowBattery(recipient system.Recipient, systemName string, device *system.Device, batteryLevel float32) bool {
-	err := w.send(recipient.Phone, cfg.GetString(cNotificationTemplateName), recipient.Lang, []string{
-		systemName, device.Name, i18n.Translate(recipient.Lang, i18n.WALowBattery),
+func (w *WhatsApp) NotifyLowBattery(person config.Person, systemName string, device device.Spec, zone zone.Zone, batteryLevel float32) bool {
+	err := w.send(person.WhatsApp, w.config.TemplateNotification, person.Lang, []string{
+		systemName, device.DisplayName, i18n.Translate(person.Lang, i18n.WALowBattery),
 	})
 
 	return err == nil
 }
 
-func (w *WhatsApp) NotifyLowLinkQuality(recipient system.Recipient, systemName string, device *system.Device, quality float32) bool {
-	err := w.send(recipient.Phone, cfg.GetString(cNotificationTemplateName), recipient.Lang, []string{
-		systemName, device.Name, i18n.Translate(recipient.Lang, i18n.WALowLinkQuality),
+func (w *WhatsApp) NotifyLowLinkQuality(person config.Person, systemName string, device device.Spec, zone zone.Zone, quality float32) bool {
+	err := w.send(person.WhatsApp, w.config.TemplateNotification, person.Lang, []string{
+		systemName, device.DisplayName, i18n.Translate(person.Lang, i18n.WALowLinkQuality),
 	})
 
 	return err == nil
 }
 
-func (w *WhatsApp) NotifyAutoArm(recipient system.Recipient, systemName string) bool {
-	err := w.send(recipient.Phone, cfg.GetString(cAutoArmTemplateName), recipient.Lang, []string{
+func (w *WhatsApp) NotifyAutoArm(person config.Person, systemName string) bool {
+	err := w.send(person.WhatsApp, w.config.TemplateAutoArm, person.Lang, []string{
 		systemName,
 	})
 
 	return err == nil
 }
 
-func (w *WhatsApp) NotifyAutoDisarm(recipient system.Recipient, systemName string) bool {
-	err := w.send(recipient.Phone, cfg.GetString(cAutoDisarmTemplateName), recipient.Lang, []string{
+func (w *WhatsApp) NotifyAutoDisarm(person config.Person, systemName string) bool {
+	err := w.send(person.WhatsApp, w.config.TemplateAutoDisarm, person.Lang, []string{
 		systemName,
 	})
 

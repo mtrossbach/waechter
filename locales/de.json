@@ -12,6 +12,10 @@
     "translation": "Alarmende"
   },
   {
+    "id": "alarm_entry_delay",
+    "translation": "Eingangsverzögerung"
+  },
+  {
     "id": "alarm_burglar",
     "translation": "Einbruchalarm"
   },
@@ -26,5 +30,9 @@
   {
     "id": "alarm_tamper",
     "translation": "Sabotagealarm"
+  },
+  {
+    "id": "alarm_tamper_pin",
+    "translation": "PIN-Falscheingabealarm"
   }
 ]

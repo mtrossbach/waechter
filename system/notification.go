@@ -1,16 +1,18 @@
 package system
 
-type Recipient struct {
-	Name  string
-	Phone string
-	Lang  string
-}
+import (
+	"github.com/mtrossbach/waechter/internal/config"
+	"github.com/mtrossbach/waechter/system/alarm"
+	"github.com/mtrossbach/waechter/system/device"
+	"github.com/mtrossbach/waechter/system/zone"
+)
 
 type NotificationAdapter interface {
-	NotifyAlarm(recipient Recipient, systemName string, alarmType AlarmType, device *Device) bool
-	NotifyRecovery(recipient Recipient, systemName string, device *Device) bool
-	NotifyLowBattery(recipient Recipient, systemName string, device *Device, batteryLevel float32) bool
-	NotifyLowLinkQuality(recipient Recipient, systemName string, device *Device, quality float32) bool
-	NotifyAutoArm(recipient Recipient, systemName string) bool
-	NotifyAutoDisarm(recipient Recipient, systemName string) bool
+	Name() string
+	NotifyAlarm(person config.Person, systemName string, a alarm.Type, device device.Spec, zone zone.Zone) bool
+	NotifyRecovery(person config.Person, systemName string, device device.Spec, zone zone.Zone) bool
+	NotifyLowBattery(person config.Person, systemName string, device device.Spec, zone zone.Zone, batteryLevel float32) bool
+	NotifyLowLinkQuality(person config.Person, systemName string, device device.Spec, zone zone.Zone, quality float32) bool
+	NotifyAutoArm(person config.Person, systemName string) bool
+	NotifyAutoDisarm(person config.Person, systemName string) bool
 }

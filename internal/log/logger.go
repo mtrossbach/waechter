@@ -1,18 +1,12 @@
 package log
 
 import (
-	"github.com/mtrossbach/waechter/internal/cfg"
+	"github.com/mtrossbach/waechter/internal/config"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-)
-
-const (
-	cLogLevel  = "log.level"
-	cLogFormat = "log.format"
 )
 
 func Debug() *zerolog.Event {
@@ -27,15 +21,8 @@ func Error() *zerolog.Event {
 	return log.Error()
 }
 
-func init() {
-	cfg.SetDefault(cLogLevel, "info")
-	cfg.SetDefault(cLogFormat, "text")
-}
-
 func UpdateLogger() {
-	level := strings.ToLower(cfg.GetString(cLogLevel))
-
-	switch level {
+	switch config.LogLevel() {
 	case "error":
 		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 	case "warn":
@@ -48,8 +35,7 @@ func UpdateLogger() {
 		zerolog.SetGlobalLevel(zerolog.TraceLevel)
 	}
 
-	format := strings.ToLower(cfg.GetString(cLogFormat))
-	switch format {
+	switch config.LogFormat() {
 	case "json":
 		log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
 	default:

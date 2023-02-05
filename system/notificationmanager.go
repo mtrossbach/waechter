@@ -1,83 +1,76 @@
 package system
 
 import (
-	"github.com/mtrossbach/waechter/internal/cfg"
+	"github.com/mtrossbach/waechter/internal/config"
 	"github.com/mtrossbach/waechter/internal/log"
+	"github.com/mtrossbach/waechter/system/alarm"
+	"github.com/mtrossbach/waechter/system/device"
+	"github.com/mtrossbach/waechter/system/zone"
 )
 
 type notificationManager struct {
-	systemName string
-	adapters   []NotificationAdapter
+	adapters []NotificationAdapter
 }
 
-func newNotificationManager(systemName string) *notificationManager {
-	return &notificationManager{systemName: systemName, adapters: []NotificationAdapter{}}
+func newNotificationManager() *notificationManager {
+	return &notificationManager{adapters: []NotificationAdapter{}}
 }
 
 func (n *notificationManager) AddAdapter(adapter NotificationAdapter) {
 	n.adapters = append(n.adapters, adapter)
 }
 
-func (n *notificationManager) allRecipients() []Recipient {
-	objs := cfg.GetStringStringMaps(cNotificationRecipients)
-	var recipients []Recipient
-	for _, m := range objs {
-		recipients = append(recipients, Recipient{
-			Name:  m[cRecipientName],
-			Phone: m[cRecipientPhone],
-			Lang:  m[cRecipientLanguage],
-		})
-	}
-	return recipients
+func (n *notificationManager) allPersons() []config.Person {
+	return config.Persons()
 }
 
-func (n *notificationManager) notify(recipients []Recipient, handler func(recipient Recipient, adapter NotificationAdapter) bool) {
-	for _, r := range recipients {
-		success := false
+func (n *notificationManager) notify(persons []config.Person, handler func(person config.Person, adapter NotificationAdapter) bool) {
+	for _, p := range persons {
+		var successAdapter NotificationAdapter
 		for _, a := range n.adapters {
-			if handler(r, a) {
-				success = true
+			if handler(p, a) {
+				successAdapter = a
 				break
 			}
 		}
-		if !success {
-			log.Error().Str("name", r.Name).Msg("Could not sent notification to this recipient, because all notification methods failed.")
+		if successAdapter != nil {
+			log.Info().Str("name", p.Name).Str("adapter", successAdapter.Name()).Msg("Sent notification")
 		}
 	}
 }
 
-func (n *notificationManager) notifyAlarm(alarmType AlarmType, device *Device) {
-	n.notify(n.allRecipients(), func(recipient Recipient, adapter NotificationAdapter) bool {
-		return adapter.NotifyAlarm(recipient, n.systemName, alarmType, device)
+func (n *notificationManager) NotifyAlarm(a alarm.Type, device device.Spec, zone zone.Zone) {
+	n.notify(n.allPersons(), func(person config.Person, adapter NotificationAdapter) bool {
+		return adapter.NotifyAlarm(person, config.SystemName(), a, device, zone)
 	})
 }
 
-func (n *notificationManager) notifyRecovery(device *Device) {
-	n.notify(n.allRecipients(), func(recipient Recipient, adapter NotificationAdapter) bool {
-		return adapter.NotifyRecovery(recipient, n.systemName, device)
+func (n *notificationManager) NotifyRecovery(device device.Spec, zone zone.Zone) {
+	n.notify(n.allPersons(), func(person config.Person, adapter NotificationAdapter) bool {
+		return adapter.NotifyRecovery(person, config.SystemName(), device, zone)
 	})
 }
 
-func (n *notificationManager) notifyLowBattery(device *Device, battery float32) {
-	n.notify(n.allRecipients(), func(recipient Recipient, adapter NotificationAdapter) bool {
-		return adapter.NotifyLowBattery(recipient, n.systemName, device, battery)
+func (n *notificationManager) NotifyLowBattery(device device.Spec, zone zone.Zone, batteryLevel float32) {
+	n.notify(n.allPersons(), func(person config.Person, adapter NotificationAdapter) bool {
+		return adapter.NotifyLowBattery(person, config.SystemName(), device, zone, batteryLevel)
 	})
 }
 
-func (n *notificationManager) notifyLowLinkQuality(device *Device, link float32) {
-	n.notify(n.allRecipients(), func(recipient Recipient, adapter NotificationAdapter) bool {
-		return adapter.NotifyLowLinkQuality(recipient, n.systemName, device, link)
+func (n *notificationManager) NotifyLowLinkQuality(device device.Spec, zone zone.Zone, quality float32) {
+	n.notify(n.allPersons(), func(person config.Person, adapter NotificationAdapter) bool {
+		return adapter.NotifyLowLinkQuality(person, config.SystemName(), device, zone, quality)
 	})
 }
 
-func (n *notificationManager) notifyAutoArmed() {
-	n.notify(n.allRecipients(), func(recipient Recipient, adapter NotificationAdapter) bool {
-		return adapter.NotifyAutoArm(recipient, n.systemName)
+func (n *notificationManager) NotifyAutoArm() {
+	n.notify(n.allPersons(), func(person config.Person, adapter NotificationAdapter) bool {
+		return adapter.NotifyAutoArm(person, config.SystemName())
 	})
 }
 
-func (n *notificationManager) notifyAutoDisarmed() {
-	n.notify(n.allRecipients(), func(recipient Recipient, adapter NotificationAdapter) bool {
-		return adapter.NotifyAutoDisarm(recipient, n.systemName)
+func (n *notificationManager) NotifyAutoDisarm() {
+	n.notify(n.allPersons(), func(person config.Person, adapter NotificationAdapter) bool {
+		return adapter.NotifyAutoDisarm(person, config.SystemName())
 	})
 }

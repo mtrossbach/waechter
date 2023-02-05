@@ -21,3 +21,5 @@ config/config.yaml
 .idea/*
 dist/
 config/state
+config/config.yaml
+config/old_config.yaml
