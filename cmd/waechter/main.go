@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/mtrossbach/waechter/device/homeassistant"
-	"github.com/mtrossbach/waechter/device/zigbee2mqtt"
-	"github.com/mtrossbach/waechter/internal/cfg"
+	"fmt"
+	"github.com/mtrossbach/waechter/deviceconnector/homeassistant"
+	"github.com/mtrossbach/waechter/deviceconnector/zigbee2mqtt"
+	"github.com/mtrossbach/waechter/internal/config"
 	"github.com/mtrossbach/waechter/internal/i18n"
 	"github.com/mtrossbach/waechter/internal/log"
-	"github.com/mtrossbach/waechter/notification/dummy"
 	"github.com/mtrossbach/waechter/notification/whatsapp"
 	"github.com/mtrossbach/waechter/system"
 	"os"
@@ -15,34 +15,41 @@ import (
 )
 
 func main() {
-	cfg.Init()
-	cfg.Print()
+	config.Init()
+	fmt.Printf("Using config file: %v\n", config.ConfigFile())
+	config.Print()
 	log.UpdateLogger()
 
 	log.Info().Msg("Starting up...")
 	i18n.InitI18n()
 
-	sys := system.NewWaechterSystem()
-	oneEnabled := false
-	if zigbee2mqtt.IsEnabled() {
-		log.Info().Msg("Zigbee2Mqtt enabled")
-		go zigbee2mqtt.New().Start(sys)
-		oneEnabled = true
+	waechter := system.NewWaechter()
+	z2ms := config.Zigbee2MqttConfigs()
+	for _, z := range z2ms {
+		if c, err := zigbee2mqtt.NewConnector(z); err != nil {
+			log.Error().Err(err).Str("connector", "Zigbee2Mqtt").Str("id", z.Id).Msg("Could not initialize connector.")
+		} else {
+			waechter.AddDeviceConnector(c)
+		}
 	}
-	if homeassistant.IsEnabled() {
-		log.Info().Msg("HomeAssistant enabled")
-		go homeassistant.New().Start(sys)
-		oneEnabled = true
+	has := config.HomeAssistantConfigs()
+	for _, h := range has {
+		if c, err := homeassistant.NewConnector(h); err != nil {
+			log.Error().Err(err).Str("connector", "HomeAssistant").Str("id", h.Id).Msg("Could not initialize connector.")
+		} else {
+			waechter.AddDeviceConnector(c)
+		}
 	}
-	if whatsapp.IsEnabled() {
-		log.Info().Msg("WhatsApp enabled")
-		sys.AddNotificationAdapter(whatsapp.NewWhatsApp())
-	}
-	sys.AddNotificationAdapter(dummy.New())
 
-	if !oneEnabled {
-		panic("No device framework configured. Exit!")
+	for _, n := range config.Notifications() {
+		switch n {
+		case "whatsapp":
+			if config := config.WhatsAppConfig(); config != nil {
+				waechter.AddNotificationAdapter(whatsapp.NewWhatsApp(*config))
+			}
+		}
 	}
+
 	log.Info().Msg("Started.")
 
 	cancelChan := make(chan os.Signal, 1)
