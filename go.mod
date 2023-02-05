@@ -4,8 +4,8 @@ go 1.19
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.4.1
-	github.com/nicksnyder/go-i18n/v2 v2.2.0
-	golang.org/x/text v0.3.7
+	github.com/nicksnyder/go-i18n/v2 v2.2.1
+	golang.org/x/text v0.4.0
 )
 
 require (
@@ -33,5 +33,5 @@ require (
 	github.com/rs/zerolog v1.28.0
 	github.com/spf13/viper v1.13.0
 	golang.org/x/net v0.0.0-20221004154528-8021a29435af
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
+	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 )
