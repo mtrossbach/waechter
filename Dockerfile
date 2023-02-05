@@ -2,5 +2,5 @@ FROM golang:alpine
 
 ENTRYPOINT ["/waechter"]
 COPY waechter /
-COPY locales /
+COPY locales /locales
 COPY LICENSE /
