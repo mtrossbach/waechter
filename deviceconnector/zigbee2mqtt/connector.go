@@ -112,7 +112,10 @@ func (c *Connector) ActivateDevice(id device.Id) error {
 	}
 
 	c.activeDevices.Store(id, nil)
-	c.conn.Subscribe(id.Entity(), c.deviceMessageHandler(id))
+	result := c.conn.Subscribe(id.Entity(), c.deviceMessageHandler(id))
+	if !result {
+		return errors.New("could not subscribe to device")
+	}
 	c.ctrl.DeviceAvailable(id)
 	return nil
 }

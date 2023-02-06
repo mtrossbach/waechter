@@ -63,7 +63,7 @@ func (c *connection) Disconnect() {
 	c.client.Disconnect(100)
 }
 
-func (c *connection) Subscribe(topic string, handler MessageHandler) {
+func (c *connection) Subscribe(topic string, handler MessageHandler) bool {
 	topicName := fmt.Sprintf("%s/%s", c.config.BaseTopic, topic)
 	if strings.HasPrefix(topic, c.config.BaseTopic) {
 		topicName = topic
@@ -71,14 +71,16 @@ func (c *connection) Subscribe(topic string, handler MessageHandler) {
 
 	c.handler[topicName] = handler
 	if c.client == nil {
-		return
+		return false
 	}
 	token := c.client.Subscribe(topicName, 1, nil)
-	token.Wait()
-	if token.Error() != nil {
+	ok := token.WaitTimeout(10 * time.Second)
+	if token.Error() != nil || !ok {
 		log.Error().Str("topic", topicName).Err(token.Error()).Msg("Could not register handler")
+		return false
 	} else {
 		log.Debug().Str("topic", topicName).Msg("Registered handler")
+		return true
 	}
 }
 
@@ -104,7 +106,7 @@ func (c *connection) messageHandler() mqtt.MessageHandler {
 	return func(client mqtt.Client, msg mqtt.Message) {
 		handler, ok := c.handler[msg.Topic()]
 		if ok && handler != nil {
-			handler(msg)
+			go handler(msg)
 		} else {
 			log.Error().Str("topic", msg.Topic()).Msg("Could not find handler for message.")
 		}
