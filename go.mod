@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/eclipse/paho.mqtt.golang v1.4.1
 	github.com/nicksnyder/go-i18n/v2 v2.2.1
-	golang.org/x/exp v0.0.0-20230203172020-98cc5a0785f9
+	golang.org/x/exp v0.0.0-20230206171751-46f607a40771
 	golang.org/x/text v0.4.0
 )
 
