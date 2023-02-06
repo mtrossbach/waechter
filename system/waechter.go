@@ -9,6 +9,7 @@ import (
 	"github.com/mtrossbach/waechter/system/arm"
 	"github.com/mtrossbach/waechter/system/device"
 	"github.com/mtrossbach/waechter/system/zone"
+	"golang.org/x/exp/maps"
 	"os"
 	"strings"
 	"sync"
@@ -251,7 +252,50 @@ func (w *Waechter) arm(id device.Id, mode arm.Mode) bool {
 	w.wrongPinCount = 0
 	w.setArmMode(mode)
 
+	for _, d := range w.DevicesWithTamper() {
+		log.Warn().Str("_id", string(d.Id)).Msg("! Device is tampered!")
+	}
+
+	for _, d := range w.OpenContactSensors() {
+		log.Warn().Str("_id", string(d.Id)).Msg("! Door/Window is still open!")
+	}
 	return true
+}
+
+func (w *Waechter) DevicesWithTamper() []*device.Device {
+	result := make(map[device.Id]*device.Device)
+
+	w.iterateDeviceStates(func(d *device.Device, sensor device.Sensor, value any) {
+		if v, ok := value.(device.TamperSensorValues); ok {
+			if v.Tamper {
+				result[d.Id] = d
+			}
+		}
+	})
+
+	return maps.Values(result)
+}
+
+func (w *Waechter) OpenContactSensors() []*device.Device {
+	result := make(map[device.Id]*device.Device)
+
+	w.iterateDeviceStates(func(d *device.Device, sensor device.Sensor, value any) {
+		if v, ok := value.(device.ContactSensorValue); ok {
+			if !v.Contact {
+				result[d.Id] = d
+			}
+		}
+	})
+
+	return maps.Values(result)
+}
+
+func (w *Waechter) iterateDeviceStates(handler func(d *device.Device, sensor device.Sensor, value any)) {
+	for _, d := range w.devices {
+		for sensor, value := range d.State {
+			handler(d, sensor, value)
+		}
+	}
 }
 
 func (w *Waechter) disarm(id device.Id, enteredPin string) bool {

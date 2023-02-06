@@ -1,0 +1,59 @@
+general:
+  name: My Home
+  exitdelay: 30
+  entrydelay: 30
+  maxwrongpincount: 2
+  batterythreshold: 0.1
+  linkqualitythreshold: 0.1
+  tamperalarmwhilearmed: true
+  tamperalarmwhiledisarmed: false
+  devicesystemfaultalarm: true
+  devicesystemfaultalarmdelay: 300
+
+log:
+  level: info
+  format: text
+
+persons:
+  - name: John Doe
+    pin: "1111"
+    whatsapp: "+49171...."
+    lang: de
+
+devices:
+  - id: z2m::Living Room Motion
+    zone: lr
+  - id: ha::Kitchen Window
+    zone: ki
+
+zones:
+  - id: lr
+    displayName: Living Room
+    perimeter: false
+    delayed: false
+  - id: ki
+    displayName: Kitchen
+    perimeter: false
+    delayed: false
+
+connectors:
+  zigbee2mqtt:
+    - id: z2m
+      url: mqtt://localhost:1883
+      baseTopic: zigbee2mqtt
+
+  homeassistant:
+    - id: ha
+      token: ey.....
+      url: ws://localhost:8123/api/websocket
+whatsapp:
+  phoneId: "..."
+  templateAlarm: alarm_triggered
+  templateAutoarm: alarm_autoarm
+  templateAutodisarm: alarm_autodisarm
+  templateNotification: alarm_notification
+  templateRecover: alarm_recover
+  token: EA...
+
+notifications:
+  - whatsapp

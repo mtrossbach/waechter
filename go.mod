@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/eclipse/paho.mqtt.golang v1.4.1
 	github.com/nicksnyder/go-i18n/v2 v2.2.1
+	golang.org/x/exp v0.0.0-20230203172020-98cc5a0785f9
 	golang.org/x/text v0.4.0
 )
 
@@ -23,7 +24,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
-	golang.org/x/sys v0.0.0-20220908164124-27713097b956 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

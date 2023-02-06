@@ -20,7 +20,7 @@ func main() {
 	config.Print()
 	log.UpdateLogger()
 
-	log.Info().Msg("Starting up...")
+	log.Info().Str("version", os.Getenv("WAECHTER_VERSION")).Msg("Starting up...")
 	i18n.InitI18n()
 
 	waechter := system.NewWaechter()
