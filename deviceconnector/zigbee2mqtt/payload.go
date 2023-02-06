@@ -82,6 +82,32 @@ type warningOptions struct {
 	Duration        int   `json:"duration"`
 }
 
+func newNotificationShortPayload() warningPayload {
+	return warningPayload{
+		Warning: warningOptions{
+			Mode:            fire,
+			Level:           low,
+			StrobeLevel:     low,
+			Strobe:          false,
+			StrobeDutyCycle: 0,
+			Duration:        1,
+		},
+	}
+}
+
+func newNotificationLongPayload() warningPayload {
+	return warningPayload{
+		Warning: warningOptions{
+			Mode:            emergency,
+			Level:           low,
+			StrobeLevel:     low,
+			Strobe:          false,
+			StrobeDutyCycle: 0,
+			Duration:        2,
+		},
+	}
+}
+
 func newWarningPayload(a alarm.Type) warningPayload {
 	mode := stop
 	switch a {

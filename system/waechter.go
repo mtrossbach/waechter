@@ -234,9 +234,11 @@ func (w *Waechter) specForDeviceId(id device.Id) device.Spec {
 	return (*d).Spec
 }
 
-func (w *Waechter) _alarm(id device.Id, alarm alarm.Type) {
-	w.setAlarm(alarm)
-	w.noteMgr.NotifyAlarm(alarm, w.specForDeviceId(id), w.zoneForDeviceId(id))
+func (w *Waechter) _alarm(id device.Id, a alarm.Type) {
+	w.setAlarm(a)
+	if a != alarm.EntryDelay {
+		w.noteMgr.NotifyAlarm(a, w.specForDeviceId(id), w.zoneForDeviceId(id))
+	}
 }
 
 func (w *Waechter) arm(id device.Id, mode arm.Mode) bool {
@@ -248,6 +250,7 @@ func (w *Waechter) arm(id device.Id, mode arm.Mode) bool {
 	}
 	w.wrongPinCount = 0
 	w.setArmMode(mode)
+
 	return true
 }
 
@@ -257,7 +260,7 @@ func (w *Waechter) disarm(id device.Id, enteredPin string) bool {
 
 	if person != nil {
 		w.wrongPinCount = 0
-		if w.state.Alarm != alarm.None {
+		if w.state.Alarm != alarm.None && w.state.Alarm != alarm.EntryDelay {
 			w.noteMgr.NotifyRecovery(w.specForDeviceId(id), w.zoneForDeviceId(id))
 		}
 		log.Info().Str("name", person.Name).Msg("Disarmed by pin")
@@ -362,19 +365,21 @@ func (w *Waechter) setArmMode(mode arm.Mode) {
 		if w.state.Armed() {
 			l = l.Int("exitDelay", config.ExitDelay())
 		}
-		l.Msg("System mode changed")
+		l.Msg("➔ System mode changed")
 		if w.state.Armed() {
 			go func() {
 				for true {
 					if w.state.Armed() && w.isDuringExitDelay() {
-						time.Sleep(5 * time.Second)
 						r := config.ExitDelay() - int(time.Now().Sub(w.state.armModeUpdated).Seconds())
 						if r > 0 {
 							log.Info().Int("remaining", r).Msg("Remaining exit delay.")
 						}
+						w.notificationBeep(false)
+						time.Sleep(5 * time.Second)
 					} else {
 						if w.state.Armed() {
 							log.Info().Msg("Exit delay ended.")
+							w.notificationBeep(true)
 						}
 						return
 					}
@@ -396,7 +401,21 @@ func (w *Waechter) setAlarm(a alarm.Type) {
 		if a == alarm.EntryDelay {
 			l = l.Int("entryDelay", config.EntryDelay())
 		}
-		l.Msg("Alarm changed")
+		l.Msg("➔ Alarm changed")
+	}
+}
+
+func (w *Waechter) notificationBeep(long bool) {
+	a := device.NotificationShortActor
+	if long {
+		a = device.NotificationLongActor
+	}
+	for _, d := range w.devices {
+		if wslice.Contains(d.Spec.Actors, a) {
+			if c := w.deviceConnectorForId(d.Id.Prefix()); c != nil {
+				c.ControlActor(d.Id, a, nil)
+			}
+		}
 	}
 }
 

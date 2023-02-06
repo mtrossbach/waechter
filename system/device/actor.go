@@ -8,8 +8,10 @@ import (
 type Actor string
 
 const (
-	AlarmActor Actor = "alarm"
-	StateActor Actor = "state"
+	AlarmActor             Actor = "alarm"
+	StateActor             Actor = "state"
+	NotificationShortActor Actor = "notification-short"
+	NotificationLongActor  Actor = "notification-long"
 )
 
 type AlarmActorPayload struct {

@@ -9,6 +9,7 @@ import (
 	"github.com/mtrossbach/waechter/internal/log"
 	"github.com/mtrossbach/waechter/internal/wslice"
 	"github.com/mtrossbach/waechter/system"
+	"github.com/mtrossbach/waechter/system/alarm"
 	"github.com/mtrossbach/waechter/system/arm"
 	"github.com/mtrossbach/waechter/system/device"
 	"sync"
@@ -135,13 +136,27 @@ func (c *Connector) ControlActor(id device.Id, actor device.Actor, value any) bo
 		return true
 
 	case device.AlarmActor:
-		c.sendPayload(id, newWarningPayload(c.ctrl.SystemState().Alarm))
-		time.AfterFunc(100*time.Millisecond, func() {
-			// Resend after 100ms because some sirens do not correctly process payloads during active alarms
+		if c.ctrl.SystemState().Alarm == alarm.EntryDelay {
+			go func() {
+				for c.ctrl.SystemState().Alarm == alarm.EntryDelay {
+					c.sendPayload(id, newNotificationShortPayload())
+					time.Sleep(2 * time.Second)
+				}
+			}()
+		} else {
 			c.sendPayload(id, newWarningPayload(c.ctrl.SystemState().Alarm))
-		})
+			time.AfterFunc(100*time.Millisecond, func() {
+				// Resend after 100ms because some sirens do not correctly process payloads during active alarms
+				c.sendPayload(id, newWarningPayload(c.ctrl.SystemState().Alarm))
+			})
+		}
 		return true
-
+	case device.NotificationShortActor:
+		c.sendPayload(id, newNotificationShortPayload())
+		return true
+	case device.NotificationLongActor:
+		c.sendPayload(id, newNotificationLongPayload())
+		return true
 	default:
 		log.Error().Str("device", string(id)).Str("actor", string(actor)).Interface("value", value).Msg("Unknown actor type")
 	}
@@ -198,6 +213,9 @@ func (c *Connector) deviceMessageHandler(id device.Id) MessageHandler {
 					c.ctrl.DeliverSensorValue(id, s, device.LinkQualitySensorValue{LinkQuality: float32(*v) / float32(255)})
 				}
 			case device.ArmingSensor, device.DisarmingSensor, device.PanicSensor:
+				if msg.Retained() {
+					continue
+				}
 				if actionDone {
 					continue
 				} else {
@@ -294,7 +312,7 @@ func (c *Connector) specFromDeviceInfo(info Z2MDeviceInfo) device.Spec {
 	}
 
 	if wslice.ContainsAll(exposes, []string{"warning"}) {
-		spec.Actors = append(spec.Actors, device.AlarmActor)
+		spec.Actors = append(spec.Actors, device.AlarmActor, device.NotificationShortActor, device.NotificationLongActor)
 	}
 
 	if wslice.ContainsAll(exposes, []string{"contact"}) {
