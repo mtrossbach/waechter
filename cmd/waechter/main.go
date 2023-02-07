@@ -16,7 +16,7 @@ import (
 
 func main() {
 	config.Init()
-	fmt.Printf("Using config file: %v\n", config.ConfigFile())
+	fmt.Printf("Using config file: %v\n", config.ConfigFileDir())
 	config.Print()
 	log.UpdateLogger()
 

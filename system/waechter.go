@@ -40,10 +40,10 @@ func NewWaechter() *Waechter {
 		entryTimers:          sync.Map{},
 		unavailabilityTimers: sync.Map{},
 	}
-
-	w.loadState()
+	
 	w.loadZones()
 	w.loadDevices()
+	w.loadState()
 
 	go func() {
 		reader := bufio.NewReader(os.Stdin)
@@ -96,8 +96,10 @@ func (w *Waechter) AddNotificationAdapter(adapter NotificationAdapter) {
 }
 
 func (w *Waechter) loadState() {
-	w.setArmMode(arm.Disarmed)
-	w.setAlarm(alarm.None)
+	s := loadState()
+	w.setAlarm(s.Alarm)
+	w.setArmMode(s.ArmMode)
+	w.state.ArmModeUpdated = s.ArmModeUpdated
 }
 
 func (w *Waechter) loadZones() {
@@ -205,7 +207,7 @@ func (w *Waechter) DeliverSensorValue(id device.Id, sensor device.Sensor, value 
 
 func (w *Waechter) isDuringExitDelay() bool {
 	exitDelay := time.Duration(config.ExitDelay()) * time.Second
-	return w.state.Armed() && time.Now().Sub(w.state.armModeUpdated) < exitDelay
+	return w.state.Armed() && time.Now().Sub(w.state.ArmModeUpdated) < exitDelay
 }
 
 func (w *Waechter) alarm(id device.Id, alarmType alarm.Type, delayedZone bool) {
@@ -399,7 +401,7 @@ func (w *Waechter) DeviceAvailable(id device.Id) {
 func (w *Waechter) setArmMode(mode arm.Mode) {
 	if w.state.ArmMode != mode {
 		w.state.ArmMode = mode
-		w.state.armModeUpdated = time.Now()
+		w.state.ArmModeUpdated = time.Now()
 
 		w.syncZones()
 
@@ -414,7 +416,7 @@ func (w *Waechter) setArmMode(mode arm.Mode) {
 			go func() {
 				for true {
 					if w.state.Armed() && w.isDuringExitDelay() {
-						r := config.ExitDelay() - int(time.Now().Sub(w.state.armModeUpdated).Seconds())
+						r := config.ExitDelay() - int(time.Now().Sub(w.state.ArmModeUpdated).Seconds())
 						if r > 0 {
 							log.Info().Int("remaining", r).Msg("Remaining exit delay.")
 						}
@@ -430,7 +432,7 @@ func (w *Waechter) setArmMode(mode arm.Mode) {
 				}
 			}()
 		}
-
+		persistState(w.state)
 	}
 }
 
@@ -446,6 +448,7 @@ func (w *Waechter) setAlarm(a alarm.Type) {
 			l = l.Int("entryDelay", config.EntryDelay())
 		}
 		l.Msg("➔ Alarm changed")
+		persistState(w.state)
 	}
 }
 

@@ -106,7 +106,7 @@ func setDefault(key string, value interface{}) {
 	viper.SetDefault(key, value)
 }
 
-func ConfigFile() string {
+func ConfigFileDir() string {
 	return path.Dir(viper.ConfigFileUsed())
 }
 
