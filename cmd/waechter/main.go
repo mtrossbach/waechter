@@ -16,7 +16,7 @@ import (
 
 func main() {
 	config.Init()
-	fmt.Printf("Using config file: %v\n", config.ConfigFileDir())
+	fmt.Printf("Using config file: %v\n", config.File())
 	config.Print()
 	log.UpdateLogger()
 
@@ -24,7 +24,7 @@ func main() {
 	i18n.InitI18n()
 
 	waechter := system.NewWaechter()
-	z2ms := config.Zigbee2MqttConfigs()
+	z2ms := config.Zigbee2Mqtt()
 	for _, z := range z2ms {
 		if c, err := zigbee2mqtt.NewConnector(z); err != nil {
 			log.Error().Err(err).Str("connector", "Zigbee2Mqtt").Str("id", z.Id).Msg("Could not initialize connector.")
@@ -32,7 +32,7 @@ func main() {
 			waechter.AddDeviceConnector(c)
 		}
 	}
-	has := config.HomeAssistantConfigs()
+	has := config.HomeAssistant()
 	for _, h := range has {
 		if c, err := homeassistant.NewConnector(h); err != nil {
 			log.Error().Err(err).Str("connector", "HomeAssistant").Str("id", h.Id).Msg("Could not initialize connector.")
@@ -41,10 +41,10 @@ func main() {
 		}
 	}
 
-	for _, n := range config.Notifications() {
+	for _, n := range config.Notification() {
 		switch n {
 		case "whatsapp":
-			if config := config.WhatsAppConfig(); config != nil {
+			if config := config.WhatsApp(); config != nil {
 				waechter.AddNotificationAdapter(whatsapp.NewWhatsApp(*config))
 			}
 		}

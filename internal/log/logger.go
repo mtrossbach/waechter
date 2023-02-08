@@ -26,7 +26,7 @@ func Warn() *zerolog.Event {
 }
 
 func UpdateLogger() {
-	switch config.LogLevel() {
+	switch config.Log().Level {
 	case "error":
 		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 	case "warn":
@@ -39,7 +39,7 @@ func UpdateLogger() {
 		zerolog.SetGlobalLevel(zerolog.TraceLevel)
 	}
 
-	switch config.LogFormat() {
+	switch config.Log().Format {
 	case "json":
 		log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
 	default:

@@ -11,6 +11,7 @@ type Z2MDeviceInfo struct {
 	ModelId            string     `json:"model_id"`
 	Interviewing       bool       `json:"interviewing"`
 	InterviewCompleted bool       `json:"interview_completed"`
+	Manufacturer       string     `json:"manufacturer"`
 }
 
 type Clusters struct {

@@ -40,7 +40,7 @@ func NewWaechter() *Waechter {
 		entryTimers:          sync.Map{},
 		unavailabilityTimers: sync.Map{},
 	}
-	
+
 	w.loadZones()
 	w.loadDevices()
 	w.loadState()
@@ -104,7 +104,7 @@ func (w *Waechter) loadState() {
 
 func (w *Waechter) loadZones() {
 	w.zones = make(map[zone.Id]*zone.Zone)
-	for _, zc := range config.ZoneConfigs() {
+	for _, zc := range config.Zones() {
 		z := zone.ZoneFromConfig(zc)
 		w.zones[z.Id] = &z
 	}
@@ -112,7 +112,7 @@ func (w *Waechter) loadZones() {
 
 func (w *Waechter) loadDevices() {
 	w.devices = make(map[device.Id]*device.Device)
-	for _, dc := range config.DeviceConfigs() {
+	for _, dc := range config.Devices() {
 		d := device.DeviceFromConfig(dc)
 		w.devices[d.Id] = &d
 	}
@@ -173,18 +173,18 @@ func (w *Waechter) DeliverSensorValue(id device.Id, sensor device.Sensor, value 
 
 	} else if v, ok := value.(device.TamperSensorValues); ok {
 		if v.Tamper {
-			if (z.Armed && config.TamperAlarmWhileArmed()) || (!z.Armed && config.TamperAlarmWhileDisarmed()) {
+			if (z.Armed && config.General().TamperAlarmWhileArmed) || (!z.Armed && config.General().TamperAlarmWhileDisarmed) {
 				w.alarm(id, alarm.Tamper, false)
 			}
 		}
 
 	} else if v, ok := value.(device.BatteryLevelSensorValue); ok {
-		if v.BatteryLevel < config.BatteryLevelThreshold() {
+		if v.BatteryLevel < config.General().BatteryThreshold {
 			w.noteMgr.NotifyLowBattery(w.specForDeviceId(id), w.zoneForDeviceId(id), v.BatteryLevel)
 		}
 
 	} else if v, ok := value.(device.LinkQualitySensorValue); ok {
-		if v.LinkQuality < config.LinkQualityThreshold() {
+		if v.LinkQuality < config.General().LinkQualityThreshold {
 			w.noteMgr.NotifyLowLinkQuality(w.specForDeviceId(id), w.zoneForDeviceId(id), v.LinkQuality)
 		}
 
@@ -206,7 +206,7 @@ func (w *Waechter) DeliverSensorValue(id device.Id, sensor device.Sensor, value 
 }
 
 func (w *Waechter) isDuringExitDelay() bool {
-	exitDelay := time.Duration(config.ExitDelay()) * time.Second
+	exitDelay := time.Duration(config.General().ExitDelay) * time.Second
 	return w.state.Armed() && time.Now().Sub(w.state.ArmModeUpdated) < exitDelay
 }
 
@@ -215,7 +215,7 @@ func (w *Waechter) alarm(id device.Id, alarmType alarm.Type, delayedZone bool) {
 		w._alarm(id, alarm.EntryDelay)
 		t, ok := w.entryTimers.Load(id)
 		if !ok {
-			t = time.AfterFunc(time.Duration(config.EntryDelay())*time.Second, func() {
+			t = time.AfterFunc(time.Duration(config.General().EntryDelay)*time.Second, func() {
 				w.entryTimers.Delete(id)
 				if w.zoneForDeviceId(id).Armed {
 					w._alarm(id, alarmType)
@@ -322,7 +322,7 @@ func (w *Waechter) disarm(id device.Id, enteredPin string) bool {
 	} else {
 		w.wrongPinCount += 1
 		log.Info().Str("device", string(id)).Int("wrongPinCount", w.wrongPinCount).Msg("Wrong PIN entered.")
-		if w.wrongPinCount > config.MaxWrongPinCount() {
+		if w.wrongPinCount > config.General().MaxWrongPinCount {
 			log.Info().Str("device", string(id)).Int("wrongPinCount", w.wrongPinCount).Msg("Maximum number of wrong PINs exceed.")
 			w.alarm(id, alarm.TamperPin, false)
 		}
@@ -368,8 +368,8 @@ func (w *Waechter) DeviceListUpdated(system DeviceConnector) {
 }
 
 func (w *Waechter) OperationalStateChanged(connector DeviceConnector) {
-	if !connector.Operational() && config.DeviceSystemFaultAlarm() && w.state.Armed() {
-		time.AfterFunc(time.Duration(config.DeviceSystemFaultDelay())*time.Second, func() {
+	if !connector.Operational() && config.General().DeviceSystemFaultAlarm && w.state.Armed() {
+		time.AfterFunc(time.Duration(config.General().DeviceSystemFaultAlarmDelay)*time.Second, func() {
 			if !connector.Operational() && w.state.Armed() {
 				w.alarm(systemDeviceId, alarm.Tamper, false)
 			}
@@ -409,18 +409,18 @@ func (w *Waechter) setArmMode(mode arm.Mode) {
 
 		l := log.Info().Str("mode", string(mode))
 		if w.state.Armed() {
-			l = l.Int("exitDelay", config.ExitDelay())
+			l = l.Int("exitDelay", config.General().ExitDelay)
 		}
 		l.Msg("➔ System mode changed")
 		if w.state.Armed() {
 			go func() {
+				w.notificationBeep(false)
 				for true {
 					if w.state.Armed() && w.isDuringExitDelay() {
-						r := config.ExitDelay() - int(time.Now().Sub(w.state.ArmModeUpdated).Seconds())
+						r := config.General().ExitDelay - int(time.Now().Sub(w.state.ArmModeUpdated).Seconds())
 						if r > 0 {
 							log.Info().Int("remaining", r).Msg("Remaining exit delay.")
 						}
-						w.notificationBeep(false)
 						time.Sleep(5 * time.Second)
 					} else {
 						if w.state.Armed() {
@@ -445,7 +445,7 @@ func (w *Waechter) setAlarm(a alarm.Type) {
 
 		l := log.Info().Str("alarm", string(a))
 		if a == alarm.EntryDelay {
-			l = l.Int("entryDelay", config.EntryDelay())
+			l = l.Int("entryDelay", config.General().EntryDelay)
 		}
 		l.Msg("➔ Alarm changed")
 		persistState(w.state)

@@ -1,132 +1,84 @@
 package config
 
-import "strings"
-
-const (
-	cSystemName = "general.name"
-
-	cExitDelay            = "general.exitdelay"
-	cEntryDelay           = "general.entrydelay"
-	cMaxWrongPinCount     = "general.maxwrongpincount"
-	cBatteryThreshold     = "general.batterythreshold"
-	cLinkQualityThreshold = "general.linkqualitythreshold"
-
-	cTamperAlarmWhileArmed    = "general.tamperalarmwhilearmed"
-	cTamperAlarmWhileDisarmed = "general.tamperalarmwhiledisarmed"
-
-	cDeviceSystemFaultAlarm      = "general.devicesystemfaultalarm"
-	cDeviceSystemFaultAlarmDelay = "general.devicesystemfaultalarmdelay"
-
-	cDevices = "devices"
-	cZones   = "zones"
-	cPersons = "persons"
-
-	cZigbee2MqttConfigs   = "connectors.zigbee2mqtt"
-	cHomeAssistantConfigs = "connectors.homeassistant"
-
-	cLogLevel  = "log.level"
-	cLogFormat = "log.format"
-
-	cWhatsApp      = "whatsapp"
-	cNotifications = "notifications"
+import (
+	"github.com/creasty/defaults"
+	"gopkg.in/yaml.v2"
+	"log"
+	"os"
+	"path/filepath"
 )
 
+var file string
+var instance *Config
+
 func Init() {
-	initViper()
-	setDefault(cSystemName, "Home")
-	setDefault(cExitDelay, 60)
-	setDefault(cEntryDelay, 60)
-	setDefault(cMaxWrongPinCount, 3)
-	setDefault(cBatteryThreshold, 0.1)
-	setDefault(cLinkQualityThreshold, 0.1)
-	setDefault(cTamperAlarmWhileArmed, true)
-	setDefault(cTamperAlarmWhileDisarmed, false)
-	setDefault(cDeviceSystemFaultAlarm, true)
-	setDefault(cDeviceSystemFaultAlarmDelay, 600)
+	possiblePaths := []string{
+		"./config.yaml",
+		"./config/config.yaml",
+		"/config.yaml",
+		"~/waechter/config.yaml",
+		"~/.waechter/config.yaml",
+		"/etc/waechter/config.yaml",
+	}
 
-	setDefault(cDevices, []DeviceConfig{})
-	setDefault(cZones, []ZoneConfig{})
-	setDefault(cPersons, []Person{})
-	setDefault(cZigbee2MqttConfigs, []Zigbee2MqttConfig{})
-	setDefault(cHomeAssistantConfigs, []HomeAssistantConfig{})
-	setDefault(cNotifications, []string{})
+	for _, p := range possiblePaths {
+		if _, err := os.Stat(p); err == nil {
+			file, _ = filepath.Abs(p)
+			break
+		}
+	}
 
-	setDefault(cLogLevel, "info")
-	setDefault(cLogFormat, "text")
+	if len(file) == 0 {
+		log.Fatalf("No config file found!\n")
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		log.Fatalf("Could not open config: %v", err)
+	}
+
+	var config Config
+	defaults.Set(&config)
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		log.Fatalf("Could not read config: %v", err)
+	}
+
+	instance = &config
 }
 
-func SystemName() string {
-	return getString(cSystemName)
+func General() GeneralConfig {
+	return instance.General
 }
 
-func ExitDelay() int {
-	return getInt(cExitDelay)
-}
-
-func EntryDelay() int {
-	return getInt(cEntryDelay)
-}
-
-func MaxWrongPinCount() int {
-	return getInt(cMaxWrongPinCount)
-}
-
-func BatteryLevelThreshold() float32 {
-	return getFloat32(cBatteryThreshold)
-}
-
-func LinkQualityThreshold() float32 {
-	return getFloat32(cLinkQualityThreshold)
-}
-
-func DeviceSystemFaultAlarm() bool {
-	return getBool(cDeviceSystemFaultAlarm)
-}
-
-func DeviceSystemFaultDelay() int {
-	return getInt(cDeviceSystemFaultAlarmDelay)
-}
-
-func TamperAlarmWhileArmed() bool {
-	return getBool(cTamperAlarmWhileArmed)
-}
-
-func TamperAlarmWhileDisarmed() bool {
-	return getBool(cTamperAlarmWhileDisarmed)
-}
-
-func DeviceConfigs() []DeviceConfig {
-	return getObjects[DeviceConfig](cDevices)
-}
-
-func ZoneConfigs() []ZoneConfig {
-	return getObjects[ZoneConfig](cZones)
+func Log() LogConfig {
+	return instance.Log
 }
 
 func Persons() []Person {
-	return getObjects[Person](cPersons)
+	return instance.Persons
 }
 
-func Zigbee2MqttConfigs() []Zigbee2MqttConfig {
-	return getObjects[Zigbee2MqttConfig](cZigbee2MqttConfigs)
+func Devices() []DeviceConfig {
+	return instance.Devices
 }
 
-func HomeAssistantConfigs() []HomeAssistantConfig {
-	return getObjects[HomeAssistantConfig](cHomeAssistantConfigs)
+func Zones() []ZoneConfig {
+	return instance.Zones
 }
 
-func LogFormat() string {
-	return strings.ToLower(getString(cLogFormat))
+func Zigbee2Mqtt() []Zigbee2MqttConfig {
+	return instance.Zigbee2Mqtt
 }
 
-func LogLevel() string {
-	return strings.ToLower(getString(cLogLevel))
+func HomeAssistant() []HomeAssistantConfig {
+	return instance.HomeAssistant
 }
 
-func WhatsAppConfig() *WhatsAppConfiguration {
-	return getObject[WhatsAppConfiguration](cWhatsApp)
+func WhatsApp() *WhatsAppConfiguration {
+	return instance.WhatsApp
 }
 
-func Notifications() []string {
-	return getStrings(cNotifications)
+func Notification() []string {
+	return instance.Notification
 }
