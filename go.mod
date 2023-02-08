@@ -8,7 +8,7 @@ require (
 	github.com/nicksnyder/go-i18n/v2 v2.2.1
 	golang.org/x/exp v0.0.0-20230206171751-46f607a40771
 	golang.org/x/text v0.4.0
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
