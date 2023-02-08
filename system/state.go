@@ -23,7 +23,7 @@ func loadState() State {
 	state.ArmMode = arm.Disarmed
 	state.Alarm = alarm.None
 
-	filename := path.Join(config.ConfigFileDir(), "state")
+	filename := path.Join(config.Dir(), "state")
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		log.Error().Str("filename", filename).Err(err).Msg("Could not read state file")
@@ -47,7 +47,7 @@ func persistState(state State) {
 		return
 	}
 
-	filename := path.Join(config.ConfigFileDir(), "state")
+	filename := path.Join(config.Dir(), "state")
 	err = os.WriteFile(filename, data, 0644)
 	if err != nil {
 		log.Error().Err(err).Msg("Could not write state file")

@@ -41,36 +41,36 @@ func (n *notificationManager) notify(persons []config.Person, handler func(perso
 
 func (n *notificationManager) NotifyAlarm(a alarm.Type, device device.Spec, zone zone.Zone) {
 	n.notify(n.allPersons(), func(person config.Person, adapter NotificationAdapter) bool {
-		return adapter.NotifyAlarm(person, config.SystemName(), a, device, zone)
+		return adapter.NotifyAlarm(person, config.General().Name, a, device, zone)
 	})
 }
 
 func (n *notificationManager) NotifyRecovery(device device.Spec, zone zone.Zone) {
 	n.notify(n.allPersons(), func(person config.Person, adapter NotificationAdapter) bool {
-		return adapter.NotifyRecovery(person, config.SystemName(), device, zone)
+		return adapter.NotifyRecovery(person, config.General().Name, device, zone)
 	})
 }
 
 func (n *notificationManager) NotifyLowBattery(device device.Spec, zone zone.Zone, batteryLevel float32) {
 	n.notify(n.allPersons(), func(person config.Person, adapter NotificationAdapter) bool {
-		return adapter.NotifyLowBattery(person, config.SystemName(), device, zone, batteryLevel)
+		return adapter.NotifyLowBattery(person, config.General().Name, device, zone, batteryLevel)
 	})
 }
 
 func (n *notificationManager) NotifyLowLinkQuality(device device.Spec, zone zone.Zone, quality float32) {
 	n.notify(n.allPersons(), func(person config.Person, adapter NotificationAdapter) bool {
-		return adapter.NotifyLowLinkQuality(person, config.SystemName(), device, zone, quality)
+		return adapter.NotifyLowLinkQuality(person, config.General().Name, device, zone, quality)
 	})
 }
 
 func (n *notificationManager) NotifyAutoArm() {
 	n.notify(n.allPersons(), func(person config.Person, adapter NotificationAdapter) bool {
-		return adapter.NotifyAutoArm(person, config.SystemName())
+		return adapter.NotifyAutoArm(person, config.General().Name)
 	})
 }
 
 func (n *notificationManager) NotifyAutoDisarm() {
 	n.notify(n.allPersons(), func(person config.Person, adapter NotificationAdapter) bool {
-		return adapter.NotifyAutoDisarm(person, config.SystemName())
+		return adapter.NotifyAutoDisarm(person, config.General().Name)
 	})
 }

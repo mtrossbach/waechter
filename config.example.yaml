@@ -1,14 +1,14 @@
 general:
   name: My Home
-  exitdelay: 30
-  entrydelay: 30
-  maxwrongpincount: 2
-  batterythreshold: 0.1
-  linkqualitythreshold: 0.1
-  tamperalarmwhilearmed: true
-  tamperalarmwhiledisarmed: false
-  devicesystemfaultalarm: true
-  devicesystemfaultalarmdelay: 300
+  exitDelay: 30
+  entryDelay: 30
+  maxWrongPinCount: 2
+  batteryThreshold: 0.1
+  linkQualityThreshold: 0.1
+  tamperAlarmWhileArmed: true
+  tamperAlarmWhileDisarmed: false
+  deviceSystemFaultAlarm: true
+  deviceSystemFaultAlarmDelay: 300
 
 log:
   level: info
@@ -49,8 +49,8 @@ connectors:
 whatsapp:
   phoneId: "..."
   templateAlarm: alarm_triggered
-  templateAutoarm: alarm_autoarm
-  templateAutodisarm: alarm_autodisarm
+  templateAutoArm: alarm_autoarm
+  templateAutoDisarm: alarm_autodisarm
   templateNotification: alarm_notification
   templateRecover: alarm_recover
   token: EA...

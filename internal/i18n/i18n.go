@@ -7,6 +7,9 @@ import (
 	"github.com/mtrossbach/waechter/system/alarm"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
+	"os"
+	"path"
+	"path/filepath"
 )
 
 var bundle *i18n.Bundle
@@ -14,8 +17,35 @@ var bundle *i18n.Bundle
 func InitI18n() {
 	bundle = i18n.NewBundle(language.English)
 	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
-	bundle.LoadMessageFile("./locales/en.json")
-	bundle.LoadMessageFile("./locales/de.json")
+
+	possiblePaths := []string{
+		"./locales",
+		"/locales",
+		"~/waechter/locales",
+		"~/.waechter/locales",
+		"/etc/waechter/locales",
+	}
+
+	basePath := ""
+	for _, p := range possiblePaths {
+		if _, err := os.Stat(p); err == nil {
+			basePath, _ = filepath.Abs(p)
+			break
+		}
+	}
+
+	if len(basePath) > 0 {
+		log.Info().Str("path", basePath).Msg("Found localizations.")
+	}
+
+	_, err := bundle.LoadMessageFile(path.Join(basePath, "en.json"))
+	if err != nil {
+		log.Error().Err(err).Msg("Could not load en.json localization file.")
+	}
+	_, err = bundle.LoadMessageFile(path.Join(basePath, "de.json"))
+	if err != nil {
+		log.Error().Err(err).Msg("Could not load de.json localization file.")
+	}
 }
 
 func Translate(lang string, key Key) string {

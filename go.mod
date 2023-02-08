@@ -3,10 +3,12 @@ module github.com/mtrossbach/waechter
 go 1.19
 
 require (
+	github.com/creasty/defaults v1.6.0
 	github.com/eclipse/paho.mqtt.golang v1.4.1
 	github.com/nicksnyder/go-i18n/v2 v2.2.1
 	golang.org/x/exp v0.0.0-20230206171751-46f607a40771
 	golang.org/x/text v0.4.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -26,7 +28,6 @@ require (
 	github.com/subosito/gotenv v1.4.1 // indirect
 	golang.org/x/sys v0.1.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
