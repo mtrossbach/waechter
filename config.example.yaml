@@ -36,16 +36,16 @@ zones:
     perimeter: false
     delayed: false
 
-connectors:
-  zigbee2mqtt:
-    - id: z2m
-      url: mqtt://localhost:1883
-      baseTopic: zigbee2mqtt
+zigbee2mqtt:
+  - id: z2m
+    url: mqtt://localhost:1883
+    baseTopic: zigbee2mqtt
 
-  homeassistant:
-    - id: ha
-      token: ey.....
-      url: ws://localhost:8123/api/websocket
+homeassistant:
+  - id: ha
+    token: ey.....
+    url: ws://localhost:8123/api/websocket
+
 whatsapp:
   phoneId: "..."
   templateAlarm: alarm_triggered

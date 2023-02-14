@@ -355,6 +355,7 @@ func (w *Waechter) DeviceListUpdated(system DeviceConnector) {
 		log.Info().Str("id", string(s.Id)).Str("displayName", s.DisplayName).Str("vendor", s.Vendor).Str("model", s.Model).Strs("sensors", sensors).Strs("actors", actors).Msg("\t- Device detected")
 	}
 
+	log.Info().Str("connector", system.DisplayName()).Msg("Trying to activate devices")
 	for _, d := range w.devices {
 		if !d.Active && d.Id.Prefix() == system.Id() {
 			err := system.ActivateDevice(d.Id)
@@ -365,6 +366,7 @@ func (w *Waechter) DeviceListUpdated(system DeviceConnector) {
 			}
 		}
 	}
+	log.Info().Str("connector", system.DisplayName()).Msg("Done with activating devices")
 }
 
 func (w *Waechter) OperationalStateChanged(connector DeviceConnector) {
@@ -419,7 +421,7 @@ func (w *Waechter) setArmMode(mode arm.Mode) {
 					if w.state.Armed() && w.isDuringExitDelay() {
 						r := config.General().ExitDelay - int(time.Now().Sub(w.state.ArmModeUpdated).Seconds())
 						if r > 0 {
-							log.Info().Int("remaining", r).Msg("Remaining exit delay.")
+							log.Info().Int("remaining", r).Msg("Exit delay.")
 						}
 						time.Sleep(5 * time.Second)
 					} else {

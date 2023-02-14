@@ -19,7 +19,7 @@ type Clusters struct {
 	Output []interface{} `json:"output"`
 }
 type Definition struct {
-	Model       string    `json:"types"`
+	Model       string    `json:"model"`
 	Vendor      string    `json:"vendor"`
 	Description string    `json:"description"`
 	Options     []Options `json:"options"`

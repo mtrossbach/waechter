@@ -28,23 +28,23 @@ func InitI18n() {
 
 	basePath := ""
 	for _, p := range possiblePaths {
-		if _, err := os.Stat(p); err == nil {
+		if _, err := os.Stat(path.Join(p, "en.json")); err == nil {
 			basePath, _ = filepath.Abs(p)
 			break
 		}
 	}
 
 	if len(basePath) > 0 {
-		log.Info().Str("path", basePath).Msg("Found localizations.")
+		log.Info().Str("path", basePath).Msg("Found localizations")
 	}
 
 	_, err := bundle.LoadMessageFile(path.Join(basePath, "en.json"))
 	if err != nil {
-		log.Error().Err(err).Msg("Could not load en.json localization file.")
+		log.Error().Err(err).Msg("Could not load en.json localization file")
 	}
 	_, err = bundle.LoadMessageFile(path.Join(basePath, "de.json"))
 	if err != nil {
-		log.Error().Err(err).Msg("Could not load de.json localization file.")
+		log.Error().Err(err).Msg("Could not load de.json localization file")
 	}
 }
 

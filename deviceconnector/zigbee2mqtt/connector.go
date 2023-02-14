@@ -300,8 +300,9 @@ func (c *Connector) specFromDeviceInfo(info Z2MDeviceInfo) device.Spec {
 	spec := device.Spec{
 		Id:          device.NewId(c.Id(), info.FriendlyName),
 		DisplayName: info.FriendlyName,
-		Vendor:      info.Manufacturer,
-		Model:       info.ModelId,
+		Vendor:      info.Definition.Vendor,
+		Model:       info.Definition.Model,
+		Description: info.Definition.Description,
 		Sensors:     []device.Sensor{},
 		Actors:      []device.Actor{},
 	}
