@@ -46,33 +46,36 @@ func NewWaechter() *Waechter {
 	w.loadState()
 
 	go func() {
-		reader := bufio.NewReader(os.Stdin)
-		for {
-			s, err := reader.ReadString('\n')
-			if err == nil {
-				pts := strings.Split(strings.TrimSpace(s), " ")
-				cmd := strings.ToLower(pts[0])
-				ok := false
-				switch cmd {
-				case "arm":
-					w.arm(systemDeviceId, arm.All)
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			if scanner.Err() != nil {
+				log.Error().Err(scanner.Err()).Msg("Could not read from stdin")
+				break
+			}
+
+			cmdParts := strings.Split(strings.TrimSpace(scanner.Text()), " ")
+			cmd := strings.ToLower(cmdParts[0])
+			ok := false
+			switch cmd {
+			case "arm":
+				w.arm(systemDeviceId, arm.All)
+				ok = true
+			case "disarm":
+				if len(cmdParts) > 1 {
+					w.disarm(systemDeviceId, cmdParts[1])
 					ok = true
-				case "disarm":
-					if len(pts) > 1 {
-						w.disarm(systemDeviceId, pts[1])
-						ok = true
-					}
-				case "entry-delay":
-					if w.state.Armed() {
-						w.alarm(systemDeviceId, alarm.Burglar, true)
-						ok = true
-					}
 				}
-				if !ok {
-					log.Error().Str("cmd", cmd).Msg("Could not execute command.")
+			case "entry-delay":
+				if w.state.Armed() {
+					w.alarm(systemDeviceId, alarm.Burglar, true)
+					ok = true
 				}
 			}
+			if !ok {
+				log.Error().Str("cmd", cmd).Msg("Could not execute command.")
+			}
 		}
+
 	}()
 	return &w
 }
