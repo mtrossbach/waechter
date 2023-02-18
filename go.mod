@@ -22,6 +22,6 @@ require (
 
 require (
 	github.com/rs/zerolog v1.28.0
-	golang.org/x/net v0.6.0
+	golang.org/x/net v0.7.0
 	golang.org/x/sync v0.1.0 // indirect
 )
