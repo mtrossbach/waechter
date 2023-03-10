@@ -6,7 +6,7 @@ require (
 	github.com/creasty/defaults v1.6.0
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/nicksnyder/go-i18n/v2 v2.2.1
-	golang.org/x/exp v0.0.0-20230307190834-24139beb5833
+	golang.org/x/exp v0.0.0-20230310171629-522b1b587ee0
 	golang.org/x/text v0.8.0
 	gopkg.in/yaml.v3 v3.0.1
 )
