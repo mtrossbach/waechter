@@ -3,7 +3,7 @@ module github.com/mtrossbach/waechter
 go 1.19
 
 require (
-	github.com/creasty/defaults v1.6.0
+	github.com/creasty/defaults v1.7.0
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/nicksnyder/go-i18n/v2 v2.2.1
 	golang.org/x/exp v0.0.0-20230310171629-522b1b587ee0
